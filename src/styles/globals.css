@@ -1,57 +1,133 @@
 @import "tailwindcss";
 
-/* ── Tema minimo: chiavi che i componenti usano (light + dark) ───────────── */
+/* ===========================
+   THEME TOKENS (LIGHT MODE)
+   =========================== */
 @theme {
+  /* Base surfaces & text */
   --color-background: #ffffff;
   --color-foreground: #0b0b12;
+
+  /* Cards & popover */
   --color-card: #ffffff;
   --color-card-foreground: #0b0b12;
   --color-popover: #ffffff;
   --color-popover-foreground: #0b0b12;
+
+  /* Actions */
   --color-primary: #111827;                 /* slate-900 */
   --color-primary-foreground: #ffffff;
   --color-secondary: #f3f4f6;               /* gray-100 */
   --color-secondary-foreground: #111827;
+
+  /* Neutral states */
   --color-muted: #f3f4f6;
   --color-muted-foreground: #6b7280;
   --color-accent: #e5e7eb;
   --color-accent-foreground: #111827;
+
+  /* Feedback */
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
+
+  /* Inputs, borders, focus */
   --color-border: #e5e7eb;
-  --color-input: #f9fafb;
+  --color-input: #f9fafb;                   /* field bg */
+  --color-input-background: #f3f3f5;        /* compat con tema originario */
+  --color-switch-background: #cbced4;       /* compat */
   --color-ring: #c7d2fe;
+
+  /* Sidebar (compat con origin) */
+  --color-sidebar: oklch(0.985 0 0);
+  --color-sidebar-foreground: oklch(0.145 0 0);
+  --color-sidebar-primary: #030213;
+  --color-sidebar-primary-foreground: oklch(0.985 0 0);
+  --color-sidebar-accent: oklch(0.97 0 0);
+  --color-sidebar-accent-foreground: oklch(0.205 0 0);
+  --color-sidebar-border: oklch(0.922 0 0);
+  --color-sidebar-ring: oklch(0.708 0 0);
+
+  /* Charts (compat con origin) */
+  --color-chart-1: oklch(0.646 0.222 41.116);
+  --color-chart-2: oklch(0.6 0.118 184.704);
+  --color-chart-3: oklch(0.398 0.07 227.392);
+  --color-chart-4: oklch(0.828 0.189 84.429);
+  --color-chart-5: oklch(0.769 0.188 70.08);
+
+  /* Radius */
   --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ===========================
+   DARK MODE OVERRIDES
+   =========================== */
 .dark {
   --color-background: #0b0b12;
   --color-foreground: #f3f4f6;
+
   --color-card: #0f1117;
   --color-card-foreground: #f3f4f6;
   --color-popover: #0f1117;
   --color-popover-foreground: #f3f4f6;
+
   --color-primary: #f5f6f7;
   --color-primary-foreground: #0f1117;
   --color-secondary: #161821;
   --color-secondary-foreground: #e5e7eb;
+
   --color-muted: #12141c;
   --color-muted-foreground: #9ca3af;
   --color-accent: #12141c;
   --color-accent-foreground: #e5e7eb;
+
   --color-destructive: #f87171;
   --color-destructive-foreground: #0b0b12;
+
   --color-border: #1f2330;
   --color-input: #12141c;
+  --color-input-background: #12141c;
+  --color-switch-background: #334155;
   --color-ring: #334155;
+
+  /* Sidebar dark (compat con origin) */
+  --color-sidebar: oklch(0.205 0 0);
+  --color-sidebar-foreground: oklch(0.985 0 0);
+  --color-sidebar-primary: oklch(0.488 0.243 264.376);
+  --color-sidebar-primary-foreground: oklch(0.985 0 0);
+  --color-sidebar-accent: oklch(0.269 0 0);
+  --color-sidebar-accent-foreground: oklch(0.985 0 0);
+  --color-sidebar-border: oklch(0.269 0 0);
+  --color-sidebar-ring: oklch(0.439 0 0);
+
+  /* Charts dark (compat con origin) */
+  --color-chart-1: oklch(0.488 0.243 264.376);
+  --color-chart-2: oklch(0.696 0.17 162.48);
+  --color-chart-3: oklch(0.769 0.188 70.08);
+  --color-chart-4: oklch(0.627 0.265 303.9);
+  --color-chart-5: oklch(0.645 0.246 16.439);
 }
 
+/* ===========================
+   BASE LAYER
+   =========================== */
 @layer base {
   html { color-scheme: light dark; }
   body { @apply min-h-screen bg-background text-foreground antialiased; }
+
+  /* Placeholder leggibili in entrambi i temi */
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-muted-foreground/70;
+  }
 }
 
-/* ── Primitive riutilizzabili (btn, card, input, badge) ──────────────────── */
+/* ===========================
+   COMPONENT PRIMITIVES
+   =========================== */
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center gap-2
@@ -78,4 +154,14 @@
     @apply inline-flex items-center rounded-full px-2.5 py-0.5
            bg-accent text-accent-foreground text-xs font-medium;
   }
+
+  /* Link “sicuri” con contrasto corretto */
+  .link {
+    @apply text-primary underline-offset-4 hover:underline;
+  }
+
+  /* Sidebar helpers (se usi bg-sidebar, text-sidebar-foreground, ecc.) */
+  .sidebar      { @apply bg-sidebar text-sidebar-foreground; }
+  .sidebar-accent{ @apply bg-sidebar-accent text-sidebar-accent-foreground; }
+  .sidebar-primary { @apply bg-sidebar-primary text-sidebar-primary-foreground; }
 }
