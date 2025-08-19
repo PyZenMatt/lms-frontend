@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ===========================
    THEME TOKENS (LIGHT MODE)
@@ -15,9 +15,9 @@
   --color-popover-foreground: #0b0b12;
 
   /* Actions */
-  --color-primary: #111827;                 /* slate-900 */
+  --color-primary: #111827; /* slate-900 */
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f3f4f6;               /* gray-100 */
+  --color-secondary: #f3f4f6; /* gray-100 */
   --color-secondary-foreground: #111827;
 
   /* Neutral states */
@@ -32,9 +32,9 @@
 
   /* Inputs, borders, focus */
   --color-border: #e5e7eb;
-  --color-input: #f9fafb;                   /* field bg */
-  --color-input-background: #f3f3f5;        /* compat con tema originario */
-  --color-switch-background: #cbced4;       /* compat */
+  --color-input: #f9fafb; /* field bg */
+  --color-input-background: #f3f3f5; /* compat con tema originario */
+  --color-switch-background: #cbced4; /* compat */
   --color-ring: #c7d2fe;
 
   /* Sidebar (compat con origin) */
@@ -115,8 +115,12 @@
    BASE LAYER
    =========================== */
 @layer base {
-  html { color-scheme: light dark; }
-  body { @apply min-h-screen bg-background text-foreground antialiased; }
+  html {
+    color-scheme: light dark;
+  }
+  body {
+    @apply min-h-screen bg-background text-foreground antialiased;
+  }
 
   /* Placeholder leggibili in entrambi i temi */
   input::placeholder,
@@ -136,9 +140,15 @@
            border border-transparent
            transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60;
   }
-  .btn:hover    { @apply opacity-90; }
-  .btn-outline  { @apply bg-transparent text-foreground border-border; }
-  .btn-muted    { @apply bg-muted text-muted-foreground; }
+  .btn:hover {
+    @apply opacity-90;
+  }
+  .btn-outline {
+    @apply bg-transparent text-foreground border-border;
+  }
+  .btn-muted {
+    @apply bg-muted text-muted-foreground;
+  }
 
   .card {
     @apply bg-card text-card-foreground rounded-lg border border-border shadow-sm;
@@ -161,7 +171,13 @@
   }
 
   /* Sidebar helpers (se usi bg-sidebar, text-sidebar-foreground, ecc.) */
-  .sidebar      { @apply bg-sidebar text-sidebar-foreground; }
-  .sidebar-accent{ @apply bg-sidebar-accent text-sidebar-accent-foreground; }
-  .sidebar-primary { @apply bg-sidebar-primary text-sidebar-primary-foreground; }
+  .sidebar {
+    @apply bg-sidebar text-sidebar-foreground;
+  }
+  .sidebar-accent {
+    @apply bg-sidebar-accent text-sidebar-accent-foreground;
+  }
+  .sidebar-primary {
+    @apply bg-sidebar-primary text-sidebar-primary-foreground;
+  }
 }

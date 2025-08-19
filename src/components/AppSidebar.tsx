@@ -1,4 +1,15 @@
-import { Home, BookOpen, Users, Trophy, Palette, MessageCircle, User, UserCheck, GraduationCap, Wallet } from "lucide-react"
+import {
+  Home,
+  BookOpen,
+  Users,
+  Trophy,
+  Palette,
+  MessageCircle,
+  User,
+  UserCheck,
+  GraduationCap,
+  Wallet,
+} from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -10,9 +21,9 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
-} from "./ui/sidebar"
-import { Badge } from "./ui/badge"
-import { useAuth } from "./AuthContext"
+} from './ui/sidebar'
+import { Badge } from './ui/badge'
+import { useAuth } from './AuthContext'
 
 interface AppSidebarProps {
   currentPage: string
@@ -23,21 +34,21 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
   const { user, isTeacher } = useAuth()
 
   const studentMenuItems = [
-    { title: "Dashboard", page: "dashboard", icon: Home },
-    { title: "Learning Paths", page: "courses", icon: BookOpen },
-    { title: "Peer Review", page: "peer-review", icon: UserCheck },
-    { title: "Community", page: "community", icon: Users },
-    { title: "Gallery", page: "gallery", icon: Palette },
-    { title: "Discussions", page: "discussions", icon: MessageCircle },
-    { title: "Achievements", page: "achievements", icon: Trophy },
+    { title: 'Dashboard', page: 'dashboard', icon: Home },
+    { title: 'Learning Paths', page: 'courses', icon: BookOpen },
+    { title: 'Peer Review', page: 'peer-review', icon: UserCheck },
+    { title: 'Community', page: 'community', icon: Users },
+    { title: 'Gallery', page: 'gallery', icon: Palette },
+    { title: 'Discussions', page: 'discussions', icon: MessageCircle },
+    { title: 'Achievements', page: 'achievements', icon: Trophy },
   ]
 
   const teacherMenuItems = [
-    { title: "Dashboard", page: "teacher-dashboard", icon: GraduationCap },
-    { title: "My Courses", page: "courses", icon: BookOpen },
-    { title: "Students", page: "students", icon: Users },
-    { title: "Community", page: "community", icon: Users },
-    { title: "Analytics", page: "analytics", icon: Trophy },
+    { title: 'Dashboard', page: 'teacher-dashboard', icon: GraduationCap },
+    { title: 'My Courses', page: 'courses', icon: BookOpen },
+    { title: 'Students', page: 'students', icon: Users },
+    { title: 'Community', page: 'community', icon: Users },
+    { title: 'Analytics', page: 'analytics', icon: Trophy },
   ]
 
   const menuItems = isTeacher ? teacherMenuItems : studentMenuItems
@@ -52,7 +63,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
           <div>
             <h2 className="font-medium">ArtLearn</h2>
             <p className="text-xs text-muted-foreground">
-              {isTeacher ? "Teacher Studio" : "Community Studio"}
+              {isTeacher ? 'Teacher Studio' : 'Community Studio'}
             </p>
           </div>
         </div>
@@ -64,22 +75,29 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
+                  <SidebarMenuButton
                     asChild
                     isActive={
-                      currentPage === item.page || 
-                      (item.page === "teacher-dashboard" && currentPage === "dashboard" && isTeacher) ||
-                      (item.page === "dashboard" && currentPage === "dashboard" && !isTeacher)
+                      currentPage === item.page ||
+                      (item.page === 'teacher-dashboard' &&
+                        currentPage === 'dashboard' &&
+                        isTeacher) ||
+                      (item.page === 'dashboard' &&
+                        currentPage === 'dashboard' &&
+                        !isTeacher)
                     }
                   >
-                    <button 
+                    <button
                       onClick={() => onPageChange(item.page)}
                       className="w-full flex items-center gap-2"
                     >
                       <item.icon className="size-4" />
                       <span>{item.title}</span>
-                      {item.title === "Peer Review" && !isTeacher && (
-                        <Badge variant="secondary" className="ml-auto bg-blue-100 text-blue-800">
+                      {item.title === 'Peer Review' && !isTeacher && (
+                        <Badge
+                          variant="secondary"
+                          className="ml-auto bg-blue-100 text-blue-800"
+                        >
                           3
                         </Badge>
                       )}
@@ -94,10 +112,13 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => onPageChange("wallet")}>
+            <SidebarMenuButton onClick={() => onPageChange('wallet')}>
               <Wallet className="size-4" />
               <span>Wallet</span>
-              <Badge variant="secondary" className="ml-auto bg-purple-100 text-purple-800">
+              <Badge
+                variant="secondary"
+                className="ml-auto bg-purple-100 text-purple-800"
+              >
                 {user?.tokens || 0} ✨
               </Badge>
             </SidebarMenuButton>

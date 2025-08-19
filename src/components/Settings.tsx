@@ -1,30 +1,42 @@
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
-import { Label } from "./ui/label"
-import { Switch } from "./ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Separator } from "./ui/separator"
-import { Badge } from "./ui/badge"
-import { 
-  Moon, 
-  Sun, 
-  Bell, 
-  Mail, 
-  Shield, 
-  User, 
+import { useState } from 'react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
+import { Switch } from './ui/switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
+import { Separator } from './ui/separator'
+import { Badge } from './ui/badge'
+import {
+  Moon,
+  Sun,
+  Bell,
+  Mail,
+  Shield,
+  User,
   Palette,
   Volume2,
   VolumeX,
   Smartphone,
   Save,
   Trash2,
-  AlertTriangle
-} from "lucide-react"
-import { useAuth } from "./AuthContext"
-import { toast } from "sonner"
+  AlertTriangle,
+} from 'lucide-react'
+import { useAuth } from './AuthContext'
+import { toast } from 'sonner'
 
 export function Settings() {
   const { user } = useAuth()
@@ -38,40 +50,40 @@ export function Settings() {
     achievementNotifications: true,
     courseNotifications: true,
     communityNotifications: false,
-    
+
     // Privacy
     profileVisibility: 'public',
     showEmail: false,
     showProgress: true,
     allowMessages: true,
-    
+
     // Preferences
     language: 'en',
     timezone: 'UTC-8',
     autoplayVideos: true,
     soundEffects: true,
-    compactMode: false
+    compactMode: false,
   })
 
   const handleDarkModeToggle = () => {
     setIsDarkMode(!isDarkMode)
     document.documentElement.classList.toggle('dark')
-    toast(isDarkMode ? "Switched to light mode" : "Switched to dark mode")
+    toast(isDarkMode ? 'Switched to light mode' : 'Switched to dark mode')
   }
 
   const handleSettingChange = (key: string, value: boolean | string) => {
-    setSettings(prev => ({ ...prev, [key]: value }))
+    setSettings((prev) => ({ ...prev, [key]: value }))
   }
 
   const handleSaveSettings = () => {
     // In real app, this would save to backend
-    toast("Settings saved successfully!")
+    toast('Settings saved successfully!')
   }
 
   const handleDeleteAccount = () => {
     // In real app, this would show confirmation dialog
-    toast("Account deletion requires email confirmation", {
-      description: "Please check your email for further instructions"
+    toast('Account deletion requires email confirmation', {
+      description: 'Please check your email for further instructions',
     })
   }
 
@@ -80,7 +92,9 @@ export function Settings() {
       <div className="flex items-center justify-between">
         <div>
           <h1>Settings</h1>
-          <p className="text-muted-foreground">Manage your account preferences and privacy settings</p>
+          <p className="text-muted-foreground">
+            Manage your account preferences and privacy settings
+          </p>
         </div>
         <Button onClick={handleSaveSettings}>
           <Save className="size-4 mr-2" />
@@ -103,7 +117,9 @@ export function Settings() {
                 <Palette className="size-5" />
                 Theme
               </CardTitle>
-              <CardDescription>Customize the appearance of the platform</CardDescription>
+              <CardDescription>
+                Customize the appearance of the platform
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
@@ -122,36 +138,46 @@ export function Settings() {
                   <Moon className="size-4" />
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-3">
                 <Label>Display Preferences</Label>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-sm">Compact Mode</Label>
-                      <p className="text-xs text-muted-foreground">Reduce spacing and padding</p>
+                      <p className="text-xs text-muted-foreground">
+                        Reduce spacing and padding
+                      </p>
                     </div>
                     <Switch
                       checked={settings.compactMode}
-                      onCheckedChange={(checked: boolean) => handleSettingChange('compactMode', checked)}
+                      onCheckedChange={(checked: boolean) =>
+                        handleSettingChange('compactMode', checked)
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-sm">Autoplay Videos</Label>
-                      <p className="text-xs text-muted-foreground">Automatically play lesson videos</p>
+                      <p className="text-xs text-muted-foreground">
+                        Automatically play lesson videos
+                      </p>
                     </div>
                     <Switch
                       checked={settings.autoplayVideos}
-                      onCheckedChange={(checked: boolean) => handleSettingChange('autoplayVideos', checked)}
+                      onCheckedChange={(checked: boolean) =>
+                        handleSettingChange('autoplayVideos', checked)
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-sm">Sound Effects</Label>
-                      <p className="text-xs text-muted-foreground">Play sounds for notifications and actions</p>
+                      <p className="text-xs text-muted-foreground">
+                        Play sounds for notifications and actions
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
                       {settings.soundEffects ? (
@@ -161,21 +187,30 @@ export function Settings() {
                       )}
                       <Switch
                         checked={settings.soundEffects}
-                        onCheckedChange={(checked: boolean) => handleSettingChange('soundEffects', checked)}
+                        onCheckedChange={(checked: boolean) =>
+                          handleSettingChange('soundEffects', checked)
+                        }
                       />
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-3">
                 <Label>Language & Region</Label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="language" className="text-sm">Language</Label>
-                    <Select value={settings.language} onValueChange={(value: string) => handleSettingChange('language', value)}>
+                    <Label htmlFor="language" className="text-sm">
+                      Language
+                    </Label>
+                    <Select
+                      value={settings.language}
+                      onValueChange={(value: string) =>
+                        handleSettingChange('language', value)
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -189,17 +224,32 @@ export function Settings() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="timezone" className="text-sm">Timezone</Label>
-                    <Select value={settings.timezone} onValueChange={(value: string) => handleSettingChange('timezone', value)}>
+                    <Label htmlFor="timezone" className="text-sm">
+                      Timezone
+                    </Label>
+                    <Select
+                      value={settings.timezone}
+                      onValueChange={(value: string) =>
+                        handleSettingChange('timezone', value)
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="UTC-8">Pacific Time (UTC-8)</SelectItem>
-                        <SelectItem value="UTC-5">Eastern Time (UTC-5)</SelectItem>
+                        <SelectItem value="UTC-8">
+                          Pacific Time (UTC-8)
+                        </SelectItem>
+                        <SelectItem value="UTC-5">
+                          Eastern Time (UTC-5)
+                        </SelectItem>
                         <SelectItem value="UTC+0">GMT (UTC+0)</SelectItem>
-                        <SelectItem value="UTC+1">Central European (UTC+1)</SelectItem>
-                        <SelectItem value="UTC+9">Japan Standard (UTC+9)</SelectItem>
+                        <SelectItem value="UTC+1">
+                          Central European (UTC+1)
+                        </SelectItem>
+                        <SelectItem value="UTC+9">
+                          Japan Standard (UTC+9)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -216,7 +266,9 @@ export function Settings() {
                 <Bell className="size-5" />
                 Notifications
               </CardTitle>
-              <CardDescription>Control when and how you receive notifications</CardDescription>
+              <CardDescription>
+                Control when and how you receive notifications
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
@@ -231,11 +283,13 @@ export function Settings() {
                     <Mail className="size-4 text-muted-foreground" />
                     <Switch
                       checked={settings.emailNotifications}
-                      onCheckedChange={(checked: boolean) => handleSettingChange('emailNotifications', checked)}
+                      onCheckedChange={(checked: boolean) =>
+                        handleSettingChange('emailNotifications', checked)
+                      }
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label className="text-base">Push Notifications</Label>
@@ -247,55 +301,73 @@ export function Settings() {
                     <Smartphone className="size-4 text-muted-foreground" />
                     <Switch
                       checked={settings.pushNotifications}
-                      onCheckedChange={(checked: boolean) => handleSettingChange('pushNotifications', checked)}
+                      onCheckedChange={(checked: boolean) =>
+                        handleSettingChange('pushNotifications', checked)
+                      }
                     />
                   </div>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-3">
                 <Label>Notification Types</Label>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-sm">Peer Reviews</Label>
-                      <p className="text-xs text-muted-foreground">When you receive feedback or need to review</p>
+                      <p className="text-xs text-muted-foreground">
+                        When you receive feedback or need to review
+                      </p>
                     </div>
                     <Switch
                       checked={settings.peerReviewNotifications}
-                      onCheckedChange={(checked: boolean) => handleSettingChange('peerReviewNotifications', checked)}
+                      onCheckedChange={(checked: boolean) =>
+                        handleSettingChange('peerReviewNotifications', checked)
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-sm">Achievements</Label>
-                      <p className="text-xs text-muted-foreground">When you earn tokens or unlock milestones</p>
+                      <p className="text-xs text-muted-foreground">
+                        When you earn tokens or unlock milestones
+                      </p>
                     </div>
                     <Switch
                       checked={settings.achievementNotifications}
-                      onCheckedChange={(checked: boolean) => handleSettingChange('achievementNotifications', checked)}
+                      onCheckedChange={(checked: boolean) =>
+                        handleSettingChange('achievementNotifications', checked)
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-sm">Course Updates</Label>
-                      <p className="text-xs text-muted-foreground">New lessons and course announcements</p>
+                      <p className="text-xs text-muted-foreground">
+                        New lessons and course announcements
+                      </p>
                     </div>
                     <Switch
                       checked={settings.courseNotifications}
-                      onCheckedChange={(checked: boolean) => handleSettingChange('courseNotifications', checked)}
+                      onCheckedChange={(checked: boolean) =>
+                        handleSettingChange('courseNotifications', checked)
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-sm">Community Activity</Label>
-                      <p className="text-xs text-muted-foreground">Forum posts and community discussions</p>
+                      <p className="text-xs text-muted-foreground">
+                        Forum posts and community discussions
+                      </p>
                     </div>
                     <Switch
                       checked={settings.communityNotifications}
-                      onCheckedChange={(checked: boolean) => handleSettingChange('communityNotifications', checked)}
+                      onCheckedChange={(checked: boolean) =>
+                        handleSettingChange('communityNotifications', checked)
+                      }
                     />
                   </div>
                 </div>
@@ -311,60 +383,88 @@ export function Settings() {
                 <Shield className="size-5" />
                 Privacy & Visibility
               </CardTitle>
-              <CardDescription>Control what others can see about your profile and activity</CardDescription>
+              <CardDescription>
+                Control what others can see about your profile and activity
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Profile Visibility</Label>
-                  <Select value={settings.profileVisibility} onValueChange={(value: string) => handleSettingChange('profileVisibility', value)}>
+                  <Select
+                    value={settings.profileVisibility}
+                    onValueChange={(value: string) =>
+                      handleSettingChange('profileVisibility', value)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="public">Public - Anyone can view</SelectItem>
-                      <SelectItem value="community">Community - Only ArtLearn members</SelectItem>
-                      <SelectItem value="private">Private - Only you</SelectItem>
+                      <SelectItem value="public">
+                        Public - Anyone can view
+                      </SelectItem>
+                      <SelectItem value="community">
+                        Community - Only ArtLearn members
+                      </SelectItem>
+                      <SelectItem value="private">
+                        Private - Only you
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Controls who can see your profile, portfolio, and achievements
+                    Controls who can see your profile, portfolio, and
+                    achievements
                   </p>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="space-y-3">
                   <Label>Profile Information</Label>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
                         <Label className="text-sm">Show Email Address</Label>
-                        <p className="text-xs text-muted-foreground">Allow others to see your email</p>
+                        <p className="text-xs text-muted-foreground">
+                          Allow others to see your email
+                        </p>
                       </div>
                       <Switch
                         checked={settings.showEmail}
-                        onCheckedChange={(checked: boolean) => handleSettingChange('showEmail', checked)}
+                        onCheckedChange={(checked: boolean) =>
+                          handleSettingChange('showEmail', checked)
+                        }
                       />
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label className="text-sm">Show Learning Progress</Label>
-                        <p className="text-xs text-muted-foreground">Display course progress and stats</p>
+                        <Label className="text-sm">
+                          Show Learning Progress
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Display course progress and stats
+                        </p>
                       </div>
                       <Switch
                         checked={settings.showProgress}
-                        onCheckedChange={(checked: boolean) => handleSettingChange('showProgress', checked)}
+                        onCheckedChange={(checked: boolean) =>
+                          handleSettingChange('showProgress', checked)
+                        }
                       />
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
                         <Label className="text-sm">Allow Direct Messages</Label>
-                        <p className="text-xs text-muted-foreground">Let community members contact you</p>
+                        <p className="text-xs text-muted-foreground">
+                          Let community members contact you
+                        </p>
                       </div>
                       <Switch
                         checked={settings.allowMessages}
-                        onCheckedChange={(checked: boolean) => handleSettingChange('allowMessages', checked)}
+                        onCheckedChange={(checked: boolean) =>
+                          handleSettingChange('allowMessages', checked)
+                        }
                       />
                     </div>
                   </div>
@@ -381,7 +481,9 @@ export function Settings() {
                 <User className="size-5" />
                 Account Information
               </CardTitle>
-              <CardDescription>Manage your account details and security</CardDescription>
+              <CardDescription>
+                Manage your account details and security
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -406,9 +508,9 @@ export function Settings() {
                   </div>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-3">
                 <Label>Security</Label>
                 <div className="space-y-2">
@@ -423,9 +525,9 @@ export function Settings() {
                   </Button>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-3">
                 <Label className="text-red-600">Danger Zone</Label>
                 <Card className="border-red-200 bg-red-50">
@@ -433,12 +535,19 @@ export function Settings() {
                     <div className="flex items-center gap-3">
                       <AlertTriangle className="size-5 text-red-600" />
                       <div className="flex-1">
-                        <h4 className="text-sm font-medium text-red-800">Delete Account</h4>
+                        <h4 className="text-sm font-medium text-red-800">
+                          Delete Account
+                        </h4>
                         <p className="text-xs text-red-600">
-                          Permanently delete your account and all associated data
+                          Permanently delete your account and all associated
+                          data
                         </p>
                       </div>
-                      <Button variant="destructive" size="sm" onClick={handleDeleteAccount}>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDeleteAccount}
+                      >
                         <Trash2 className="size-4 mr-2" />
                         Delete
                       </Button>

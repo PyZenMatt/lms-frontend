@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect } from "react"
-import type { ReactNode } from "react"
+import { createContext, useContext, useState, useEffect } from 'react'
+import type { ReactNode } from 'react'
 
 declare global {
   interface EthereumProvider {
@@ -8,7 +8,7 @@ declare global {
   }
 
   interface Window {
-    ethereum?: EthereumProvider | undefined;
+    ethereum?: EthereumProvider | undefined
   }
 }
 interface User {
@@ -25,7 +25,12 @@ interface AuthContextType {
   user: User | null
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
-  signup: (name: string, email: string, password: string, role: 'student' | 'teacher') => Promise<boolean>
+  signup: (
+    name: string,
+    email: string,
+    password: string,
+    role: 'student' | 'teacher',
+  ) => Promise<boolean>
   connectWallet: () => Promise<boolean>
   updateTokens: (amount: number) => void
   isAuthenticated: boolean
@@ -42,7 +47,8 @@ const mockUsers: User[] = [
     email: 'maya@example.com',
     role: 'student',
     tokens: 247,
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b789?w=40&h=40&fit=crop&crop=face'
+    avatar:
+      'https://images.unsplash.com/photo-1494790108755-2616b612b789?w=40&h=40&fit=crop&crop=face',
   },
   {
     id: '2',
@@ -50,8 +56,9 @@ const mockUsers: User[] = [
     email: 'sarah@example.com',
     role: 'teacher',
     tokens: 1250,
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'
-  }
+    avatar:
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
+  },
 ]
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -68,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, _password: string): Promise<boolean> => {
     void _password
     // Mock authentication - in real app, this would call your API
-    const foundUser = mockUsers.find(u => u.email === email)
+    const foundUser = mockUsers.find((u) => u.email === email)
     if (foundUser) {
       setUser(foundUser)
       localStorage.setItem('artlearn_user', JSON.stringify(foundUser))
@@ -82,7 +89,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('artlearn_user')
   }
 
-  const signup = async (name: string, email: string, _password: string, role: 'student' | 'teacher'): Promise<boolean> => {
+  const signup = async (
+    name: string,
+    email: string,
+    _password: string,
+    role: 'student' | 'teacher',
+  ): Promise<boolean> => {
     void _password
     // Mock signup - in real app, this would call your API
     const newUser: User = {
@@ -90,18 +102,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name,
       email,
       role,
-      tokens: role === 'teacher' ? 500 : 50 // Teachers start with more tokens
+      tokens: role === 'teacher' ? 500 : 50, // Teachers start with more tokens
     }
-    
+
     setUser(newUser)
     localStorage.setItem('artlearn_user', JSON.stringify(newUser))
     return true
   }
 
   const connectWallet = async (): Promise<boolean> => {
-    if (typeof window.ethereum !== 'undefined' && typeof window.ethereum.request === 'function') {
+    if (
+      typeof window.ethereum !== 'undefined' &&
+      typeof window.ethereum.request === 'function'
+    ) {
       try {
-        const res = await window.ethereum.request({ method: 'eth_requestAccounts' })
+        const res = await window.ethereum.request({
+          method: 'eth_requestAccounts',
+        })
         const accounts = Array.isArray(res) ? (res as string[]) : undefined
         if (accounts && accounts.length > 0 && user) {
           const updatedUser = { ...user, walletAddress: accounts[0] }
@@ -132,14 +149,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     connectWallet,
     updateTokens,
     isAuthenticated: !!user,
-    isTeacher: user?.role === 'teacher'
+    isTeacher: user?.role === 'teacher',
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

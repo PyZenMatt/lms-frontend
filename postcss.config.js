@@ -1,4 +1,6 @@
-// Tailwind v4 richiede il plugin @tailwindcss/postcss
+// Tailwind v4 requires importing the postcss plugin function
+import tailwindcss from '@tailwindcss/postcss'
+
 export default {
-  plugins: ["@tailwindcss/postcss"],
+  plugins: [tailwindcss()],
 }

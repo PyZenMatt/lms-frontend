@@ -1,18 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react'
 
 export default function ThemeToggle() {
   const [dark, setDark] = useState<boolean>(() =>
-    document.documentElement.classList.contains("dark")
-  );
+    document.documentElement.classList.contains('dark'),
+  )
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.classList.toggle('dark', dark)
     try {
-      localStorage.setItem("theme", dark ? "dark" : "light");
+      localStorage.setItem('theme', dark ? 'dark' : 'light')
     } catch {
       // ignore storage errors (e.g., in private mode)
     }
-  }, [dark]);
+  }, [dark])
 
   return (
     <button
@@ -20,9 +20,9 @@ export default function ThemeToggle() {
       className="btn btn-outline"
       onClick={() => setDark((d) => !d)}
       aria-pressed={dark}
-      title={dark ? "Passa a Light" : "Passa a Dark"}
+      title={dark ? 'Passa a Light' : 'Passa a Dark'}
     >
-      {dark ? "Light" : "Dark"}
+      {dark ? 'Light' : 'Dark'}
     </button>
-  );
+  )
 }

@@ -1,28 +1,47 @@
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
-import { Button } from "./ui/button"
-import { Badge } from "./ui/badge"
-import { Input } from "./ui/input"
-import { Textarea } from "./ui/textarea"
-import { Label } from "./ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog"
-import { 
-  Plus, 
-  BookOpen, 
-  Users, 
-  Star, 
-  Eye, 
-  Edit3, 
+import { useState } from 'react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { Input } from './ui/input'
+import { Textarea } from './ui/textarea'
+import { Label } from './ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog'
+import {
+  Plus,
+  BookOpen,
+  Users,
+  Star,
+  Eye,
+  Edit3,
   Trash2,
   GraduationCap,
   Target,
   FileText,
-  Upload
-} from "lucide-react"
-import { useAuth } from "./AuthContext"
-import { ImageWithFallback } from "./figma/ImageWithFallback"
+  Upload,
+} from 'lucide-react'
+import { useAuth } from './AuthContext'
+import { ImageWithFallback } from './figma/ImageWithFallback'
 
 interface Course {
   id: string
@@ -41,7 +60,7 @@ interface Course {
 export function TeacherDashboard() {
   const { user } = useAuth()
   void user
-  const [activeTab, setActiveTab] = useState("overview")
+  const [activeTab, setActiveTab] = useState('overview')
   const [isCreateCourseOpen, setIsCreateCourseOpen] = useState(false)
   const [isCreateLessonOpen, setIsCreateLessonOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
@@ -52,42 +71,46 @@ export function TeacherDashboard() {
     {
       id: '1',
       title: 'Digital Painting Fundamentals',
-      description: 'Master the basics of digital art creation with professional techniques',
+      description:
+        'Master the basics of digital art creation with professional techniques',
       level: 'beginner',
-      thumbnail: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=300&h=200&fit=crop&crop=center',
+      thumbnail:
+        'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=300&h=200&fit=crop&crop=center',
       students: 42,
       lessons: 12,
       status: 'published',
-      createdAt: '2024-01-15'
+      createdAt: '2024-01-15',
     },
     {
       id: '2',
       title: 'Character Design Workshop',
       description: 'Create compelling characters from concept to final render',
       level: 'intermediate',
-      thumbnail: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=200&fit=crop&crop=center',
+      thumbnail:
+        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=200&fit=crop&crop=center',
       students: 28,
       lessons: 8,
       status: 'published',
-      createdAt: '2024-02-01'
+      createdAt: '2024-02-01',
     },
     {
       id: '3',
       title: 'Advanced Color Theory',
       description: 'Deep dive into color psychology and advanced techniques',
       level: 'advanced',
-      thumbnail: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=300&h=200&fit=crop&crop=center',
+      thumbnail:
+        'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=300&h=200&fit=crop&crop=center',
       students: 0,
       lessons: 0,
       status: 'draft',
-      createdAt: '2024-12-17'
-    }
+      createdAt: '2024-12-17',
+    },
   ])
 
   const [newCourse, setNewCourse] = useState({
     title: '',
     description: '',
-    level: 'beginner' as 'beginner' | 'intermediate' | 'advanced'
+    level: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
   })
 
   const [newLesson, setNewLesson] = useState({
@@ -96,7 +119,7 @@ export function TeacherDashboard() {
     exerciseTitle: '',
     exerciseDescription: '',
     exerciseInstructions: '',
-    timeEstimate: ''
+    timeEstimate: '',
   })
 
   const handleCreateCourse = () => {
@@ -105,35 +128,44 @@ export function TeacherDashboard() {
       title: newCourse.title,
       description: newCourse.description,
       level: newCourse.level,
-      thumbnail: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=300&h=200&fit=crop&crop=center',
+      thumbnail:
+        'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=300&h=200&fit=crop&crop=center',
       students: 0,
       lessons: 0,
       status: 'draft',
-      createdAt: new Date().toISOString().split('T')[0]
+      createdAt: new Date().toISOString().split('T')[0],
     }
-    
+
     setCourses([...courses, course])
     setNewCourse({ title: '', description: '', level: 'beginner' })
     setIsCreateCourseOpen(false)
   }
 
-  const publishedCourses = courses.filter(c => c.status === 'published')
-  const draftCourses = courses.filter(c => c.status === 'draft')
-  const totalStudents = courses.reduce((sum, course) => sum + course.students, 0)
+  const publishedCourses = courses.filter((c) => c.status === 'published')
+  const draftCourses = courses.filter((c) => c.status === 'draft')
+  const totalStudents = courses.reduce(
+    (sum, course) => sum + course.students,
+    0,
+  )
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1>Teacher Dashboard</h1>
-          <p className="text-muted-foreground">Manage your courses, lessons, and student progress</p>
+          <p className="text-muted-foreground">
+            Manage your courses, lessons, and student progress
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Badge variant="outline" className="bg-purple-50 border-purple-200">
             <GraduationCap className="size-3 mr-1" />
             Educator
           </Badge>
-          <Dialog open={isCreateCourseOpen} onOpenChange={setIsCreateCourseOpen}>
+          <Dialog
+            open={isCreateCourseOpen}
+            onOpenChange={setIsCreateCourseOpen}
+          >
             <DialogTrigger asChild>
               <Button>
                 <Plus className="size-4 mr-2" />
@@ -144,7 +176,8 @@ export function TeacherDashboard() {
               <DialogHeader>
                 <DialogTitle>Create New Course</DialogTitle>
                 <DialogDescription>
-                  Set up a new course with lessons and exercises for your students
+                  Set up a new course with lessons and exercises for your
+                  students
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -154,7 +187,9 @@ export function TeacherDashboard() {
                     id="course-title"
                     placeholder="e.g., Digital Painting Fundamentals"
                     value={newCourse.title}
-                    onChange={(e) => setNewCourse({...newCourse, title: e.target.value})}
+                    onChange={(e) =>
+                      setNewCourse({ ...newCourse, title: e.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -163,17 +198,22 @@ export function TeacherDashboard() {
                     id="course-description"
                     placeholder="Describe what students will learn in this course..."
                     value={newCourse.description}
-                    onChange={(e) => setNewCourse({...newCourse, description: e.target.value})}
+                    onChange={(e) =>
+                      setNewCourse({
+                        ...newCourse,
+                        description: e.target.value,
+                      })
+                    }
                     className="min-h-20"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Difficulty Level</Label>
-                  <Select 
-                    value={newCourse.level} 
-                    onValueChange={(value: 'beginner' | 'intermediate' | 'advanced') => 
-                      setNewCourse({...newCourse, level: value})
-                    }
+                  <Select
+                    value={newCourse.level}
+                    onValueChange={(
+                      value: 'beginner' | 'intermediate' | 'advanced',
+                    ) => setNewCourse({ ...newCourse, level: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -186,10 +226,16 @@ export function TeacherDashboard() {
                   </Select>
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button variant="outline" onClick={() => setIsCreateCourseOpen(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsCreateCourseOpen(false)}
+                  >
                     Cancel
                   </Button>
-                  <Button onClick={handleCreateCourse} disabled={!newCourse.title}>
+                  <Button
+                    onClick={handleCreateCourse}
+                    disabled={!newCourse.title}
+                  >
                     Create Course
                   </Button>
                 </div>
@@ -255,7 +301,11 @@ export function TeacherDashboard() {
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="courses">My Courses</TabsTrigger>
@@ -268,7 +318,9 @@ export function TeacherDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest updates from your courses</CardDescription>
+                <CardDescription>
+                  Latest updates from your courses
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-3 p-3 border rounded-lg">
@@ -276,8 +328,12 @@ export function TeacherDashboard() {
                     <Users className="size-4 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">3 new students enrolled</p>
-                    <p className="text-xs text-muted-foreground">Digital Painting Fundamentals</p>
+                    <p className="text-sm font-medium">
+                      3 new students enrolled
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Digital Painting Fundamentals
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 border rounded-lg">
@@ -286,7 +342,9 @@ export function TeacherDashboard() {
                   </div>
                   <div>
                     <p className="text-sm font-medium">12 new submissions</p>
-                    <p className="text-xs text-muted-foreground">Character Design Workshop</p>
+                    <p className="text-xs text-muted-foreground">
+                      Character Design Workshop
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 border rounded-lg">
@@ -294,8 +352,12 @@ export function TeacherDashboard() {
                     <Star className="size-4 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">4.8 star rating received</p>
-                    <p className="text-xs text-muted-foreground">From recent course feedback</p>
+                    <p className="text-sm font-medium">
+                      4.8 star rating received
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      From recent course feedback
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -331,10 +393,21 @@ export function TeacherDashboard() {
         <TabsContent value="courses" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {courses.map((course) => (
-              <Card key={course.id} className={course.status === 'draft' ? 'border-amber-200 bg-amber-50/50' : ''}>
+              <Card
+                key={course.id}
+                className={
+                  course.status === 'draft'
+                    ? 'border-amber-200 bg-amber-50/50'
+                    : ''
+                }
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <Badge variant={course.status === 'published' ? 'default' : 'secondary'}>
+                    <Badge
+                      variant={
+                        course.status === 'published' ? 'default' : 'secondary'
+                      }
+                    >
                       {course.status}
                     </Badge>
                     <div className="flex items-center gap-1">
@@ -348,14 +421,16 @@ export function TeacherDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <ImageWithFallback 
+                  <ImageWithFallback
                     src={course.thumbnail}
                     alt={course.title}
                     className="w-full h-32 rounded-lg object-cover"
                   />
                   <div>
                     <h4>{course.title}</h4>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {course.description}
+                    </p>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-4">
@@ -377,11 +452,14 @@ export function TeacherDashboard() {
                       <Eye className="size-3 mr-1" />
                       View
                     </Button>
-                    <Dialog open={isCreateLessonOpen} onOpenChange={setIsCreateLessonOpen}>
+                    <Dialog
+                      open={isCreateLessonOpen}
+                      onOpenChange={setIsCreateLessonOpen}
+                    >
                       <DialogTrigger asChild>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => setSelectedCourse(course.id)}
                         >
                           <Plus className="size-3 mr-1" />
@@ -403,66 +481,113 @@ export function TeacherDashboard() {
                                 id="lesson-title"
                                 placeholder="e.g., Understanding Light and Shadow"
                                 value={newLesson.title}
-                                onChange={(e) => setNewLesson({...newLesson, title: e.target.value})}
+                                onChange={(e) =>
+                                  setNewLesson({
+                                    ...newLesson,
+                                    title: e.target.value,
+                                  })
+                                }
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="time-estimate">Time Estimate</Label>
+                              <Label htmlFor="time-estimate">
+                                Time Estimate
+                              </Label>
                               <Input
                                 id="time-estimate"
                                 placeholder="e.g., 45 minutes"
                                 value={newLesson.timeEstimate}
-                                onChange={(e) => setNewLesson({...newLesson, timeEstimate: e.target.value})}
+                                onChange={(e) =>
+                                  setNewLesson({
+                                    ...newLesson,
+                                    timeEstimate: e.target.value,
+                                  })
+                                }
                               />
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="lesson-description">Lesson Description</Label>
+                            <Label htmlFor="lesson-description">
+                              Lesson Description
+                            </Label>
                             <Textarea
                               id="lesson-description"
                               placeholder="What will students learn in this lesson?"
                               value={newLesson.description}
-                              onChange={(e) => setNewLesson({...newLesson, description: e.target.value})}
+                              onChange={(e) =>
+                                setNewLesson({
+                                  ...newLesson,
+                                  description: e.target.value,
+                                })
+                              }
                             />
                           </div>
                           <div className="border-t pt-4">
                             <h4 className="mb-3">Exercise</h4>
                             <div className="space-y-3">
                               <div className="space-y-2">
-                                <Label htmlFor="exercise-title">Exercise Title</Label>
+                                <Label htmlFor="exercise-title">
+                                  Exercise Title
+                                </Label>
                                 <Input
                                   id="exercise-title"
                                   placeholder="e.g., Create a Light Study"
                                   value={newLesson.exerciseTitle}
-                                  onChange={(e) => setNewLesson({...newLesson, exerciseTitle: e.target.value})}
+                                  onChange={(e) =>
+                                    setNewLesson({
+                                      ...newLesson,
+                                      exerciseTitle: e.target.value,
+                                    })
+                                  }
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="exercise-description">Exercise Description</Label>
+                                <Label htmlFor="exercise-description">
+                                  Exercise Description
+                                </Label>
                                 <Textarea
                                   id="exercise-description"
                                   placeholder="What should students create or practice?"
                                   value={newLesson.exerciseDescription}
-                                  onChange={(e) => setNewLesson({...newLesson, exerciseDescription: e.target.value})}
+                                  onChange={(e) =>
+                                    setNewLesson({
+                                      ...newLesson,
+                                      exerciseDescription: e.target.value,
+                                    })
+                                  }
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="exercise-instructions">Detailed Instructions</Label>
+                                <Label htmlFor="exercise-instructions">
+                                  Detailed Instructions
+                                </Label>
                                 <Textarea
                                   id="exercise-instructions"
                                   placeholder="Step-by-step instructions for completing the exercise..."
                                   value={newLesson.exerciseInstructions}
-                                  onChange={(e) => setNewLesson({...newLesson, exerciseInstructions: e.target.value})}
+                                  onChange={(e) =>
+                                    setNewLesson({
+                                      ...newLesson,
+                                      exerciseInstructions: e.target.value,
+                                    })
+                                  }
                                   className="min-h-24"
                                 />
                               </div>
                             </div>
                           </div>
                           <div className="flex justify-end gap-3 pt-4">
-                            <Button variant="outline" onClick={() => setIsCreateLessonOpen(false)}>
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsCreateLessonOpen(false)}
+                            >
                               Cancel
                             </Button>
-                            <Button disabled={!newLesson.title || !newLesson.exerciseTitle}>
+                            <Button
+                              disabled={
+                                !newLesson.title || !newLesson.exerciseTitle
+                              }
+                            >
                               Create Lesson
                             </Button>
                           </div>
@@ -480,10 +605,14 @@ export function TeacherDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Student Management</CardTitle>
-              <CardDescription>Track student progress and engagement</CardDescription>
+              <CardDescription>
+                Track student progress and engagement
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Student management features coming soon!</p>
+              <p className="text-muted-foreground">
+                Student management features coming soon!
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -492,10 +621,14 @@ export function TeacherDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Course Analytics</CardTitle>
-              <CardDescription>Insights into course performance and student engagement</CardDescription>
+              <CardDescription>
+                Insights into course performance and student engagement
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Analytics dashboard coming soon!</p>
+              <p className="text-muted-foreground">
+                Analytics dashboard coming soon!
+              </p>
             </CardContent>
           </Card>
         </TabsContent>

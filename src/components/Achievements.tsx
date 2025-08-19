@@ -1,15 +1,32 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
-import { Badge } from "./ui/badge"
-import { Progress } from "./ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { Trophy, Star, Users, Heart, BookOpen, Sparkles, Award, Target } from "lucide-react"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card'
+import { Badge } from './ui/badge'
+import { Progress } from './ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import {
+  Trophy,
+  Star,
+  Users,
+  Heart,
+  BookOpen,
+  Sparkles,
+  Award,
+  Target,
+} from 'lucide-react'
 
 export function Achievements() {
   return (
     <div className="space-y-6">
       <div>
         <h1>Achievements & Recognition</h1>
-        <p className="text-muted-foreground">Track your artistic journey and community contributions</p>
+        <p className="text-muted-foreground">
+          Track your artistic journey and community contributions
+        </p>
       </div>
 
       {/* Token Summary */}
@@ -35,7 +52,9 @@ export function Achievements() {
               </div>
               <div>
                 <p className="text-2xl font-medium">12</p>
-                <p className="text-sm text-muted-foreground">Achievements Unlocked</p>
+                <p className="text-sm text-muted-foreground">
+                  Achievements Unlocked
+                </p>
               </div>
             </div>
           </CardContent>
@@ -71,14 +90,20 @@ export function Achievements() {
                     <Star className="size-6 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">First Masterpiece</CardTitle>
-                    <CardDescription>Completed your first major artwork</CardDescription>
+                    <CardTitle className="text-base">
+                      First Masterpiece
+                    </CardTitle>
+                    <CardDescription>
+                      Completed your first major artwork
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">Earned 3 days ago</p>
+                  <p className="text-sm text-muted-foreground">
+                    Earned 3 days ago
+                  </p>
                   <Badge className="bg-amber-100 text-amber-800">+15 ✨</Badge>
                 </div>
               </CardContent>
@@ -91,14 +116,20 @@ export function Achievements() {
                     <Heart className="size-6 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">Community Helper</CardTitle>
-                    <CardDescription>Provided helpful feedback to 10 peers</CardDescription>
+                    <CardTitle className="text-base">
+                      Community Helper
+                    </CardTitle>
+                    <CardDescription>
+                      Provided helpful feedback to 10 peers
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">Earned 1 week ago</p>
+                  <p className="text-sm text-muted-foreground">
+                    Earned 1 week ago
+                  </p>
                   <Badge className="bg-green-100 text-green-800">+20 ✨</Badge>
                 </div>
               </CardContent>
@@ -112,13 +143,17 @@ export function Achievements() {
                   </div>
                   <div>
                     <CardTitle className="text-base">Learning Streak</CardTitle>
-                    <CardDescription>Practiced art for 7 consecutive days</CardDescription>
+                    <CardDescription>
+                      Practiced art for 7 consecutive days
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">Earned 2 weeks ago</p>
+                  <p className="text-sm text-muted-foreground">
+                    Earned 2 weeks ago
+                  </p>
                   <Badge className="bg-blue-100 text-blue-800">+10 ✨</Badge>
                 </div>
               </CardContent>
@@ -132,14 +167,20 @@ export function Achievements() {
                   </div>
                   <div>
                     <CardTitle className="text-base">Collaborator</CardTitle>
-                    <CardDescription>Participated in a community project</CardDescription>
+                    <CardDescription>
+                      Participated in a community project
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">Earned 3 weeks ago</p>
-                  <Badge className="bg-purple-100 text-purple-800">+25 ✨</Badge>
+                  <p className="text-sm text-muted-foreground">
+                    Earned 3 weeks ago
+                  </p>
+                  <Badge className="bg-purple-100 text-purple-800">
+                    +25 ✨
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
@@ -156,7 +197,9 @@ export function Achievements() {
                   </div>
                   <div>
                     <CardTitle className="text-base">Mentor</CardTitle>
-                    <CardDescription>Help 25 community members (18/25)</CardDescription>
+                    <CardDescription>
+                      Help 25 community members (18/25)
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -177,14 +220,18 @@ export function Achievements() {
                   </div>
                   <div>
                     <CardTitle className="text-base">Course Master</CardTitle>
-                    <CardDescription>Complete 5 learning paths (2/5)</CardDescription>
+                    <CardDescription>
+                      Complete 5 learning paths (2/5)
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Progress value={40} className="h-2" />
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">3 more courses</p>
+                  <p className="text-sm text-muted-foreground">
+                    3 more courses
+                  </p>
                   <Badge variant="outline">+75 ✨</Badge>
                 </div>
               </CardContent>
@@ -197,13 +244,19 @@ export function Achievements() {
                     <Star className="size-6 text-muted-foreground" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">Gallery Featured</CardTitle>
-                    <CardDescription>Get artwork featured in community gallery</CardDescription>
+                    <CardTitle className="text-base">
+                      Gallery Featured
+                    </CardTitle>
+                    <CardDescription>
+                      Get artwork featured in community gallery
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">Submit high-quality artwork for review</p>
+                <p className="text-sm text-muted-foreground">
+                  Submit high-quality artwork for review
+                </p>
                 <Badge variant="outline">+30 ✨</Badge>
               </CardContent>
             </Card>
@@ -215,13 +268,19 @@ export function Achievements() {
                     <Users className="size-6 text-muted-foreground" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">Community Leader</CardTitle>
-                    <CardDescription>Organize a community event or challenge</CardDescription>
+                    <CardTitle className="text-base">
+                      Community Leader
+                    </CardTitle>
+                    <CardDescription>
+                      Organize a community event or challenge
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">Reach out to moderators to propose an event</p>
+                <p className="text-sm text-muted-foreground">
+                  Reach out to moderators to propose an event
+                </p>
                 <Badge variant="outline">+100 ✨</Badge>
               </CardContent>
             </Card>
@@ -233,7 +292,9 @@ export function Achievements() {
       <Card>
         <CardHeader>
           <CardTitle>How Creator Tokens Work</CardTitle>
-          <CardDescription>Understanding our community recognition system</CardDescription>
+          <CardDescription>
+            Understanding our community recognition system
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -1,18 +1,24 @@
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
-import { Button } from "./ui/button"
-import { Badge } from "./ui/badge"
-import { Progress } from "./ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { 
-  Wallet as WalletIcon, 
-  Sparkles, 
-  Copy, 
+import { useState } from 'react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { Progress } from './ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import {
+  Wallet as WalletIcon,
+  Sparkles,
+  Copy,
   TrendingUp,
-  Target
-} from "lucide-react"
-import { useAuth } from "./AuthContext"
-import { toast } from "sonner"
+  Target,
+} from 'lucide-react'
+import { useAuth } from './AuthContext'
+import { toast } from 'sonner'
 
 export function Wallet() {
   const { user, connectWallet } = useAuth()
@@ -24,12 +30,13 @@ export function Wallet() {
     setIsConnecting(true)
     const success = await connectWallet()
     if (success) {
-      toast("Wallet connected successfully!", {
-        description: "You can now receive tokens directly to your MetaMask wallet"
+      toast('Wallet connected successfully!', {
+        description:
+          'You can now receive tokens directly to your MetaMask wallet',
       })
     } else {
-      toast("Failed to connect wallet", {
-        description: "Please make sure MetaMask is installed and try again"
+      toast('Failed to connect wallet', {
+        description: 'Please make sure MetaMask is installed and try again',
       })
     }
     setIsConnecting(false)
@@ -38,7 +45,7 @@ export function Wallet() {
   const copyWalletAddress = () => {
     if (user?.walletAddress) {
       navigator.clipboard.writeText(user.walletAddress)
-      toast("Address copied to clipboard")
+      toast('Address copied to clipboard')
     }
   }
 
@@ -48,17 +55,57 @@ export function Wallet() {
 
   // Mock transaction history
   const recentTransactions = [
-    { type: 'earned', amount: 5, description: 'Peer review completed', date: '2 hours ago' },
-    { type: 'earned', amount: 15, description: 'Assignment submitted', date: '1 day ago' },
-    { type: 'earned', amount: 3, description: 'Helpful feedback given', date: '2 days ago' },
-    { type: 'earned', amount: 10, description: 'Weekly streak bonus', date: '3 days ago' },
-    { type: 'earned', amount: 25, description: 'Community project participation', date: '1 week ago' },
+    {
+      type: 'earned',
+      amount: 5,
+      description: 'Peer review completed',
+      date: '2 hours ago',
+    },
+    {
+      type: 'earned',
+      amount: 15,
+      description: 'Assignment submitted',
+      date: '1 day ago',
+    },
+    {
+      type: 'earned',
+      amount: 3,
+      description: 'Helpful feedback given',
+      date: '2 days ago',
+    },
+    {
+      type: 'earned',
+      amount: 10,
+      description: 'Weekly streak bonus',
+      date: '3 days ago',
+    },
+    {
+      type: 'earned',
+      amount: 25,
+      description: 'Community project participation',
+      date: '1 week ago',
+    },
   ]
 
   const nextMilestones = [
-    { name: 'Art Enthusiast', requirement: 300, reward: 50, current: user?.tokens || 0 },
-    { name: 'Community Helper', requirement: 500, reward: 100, current: user?.tokens || 0 },
-    { name: 'Master Critic', requirement: 1000, reward: 200, current: user?.tokens || 0 },
+    {
+      name: 'Art Enthusiast',
+      requirement: 300,
+      reward: 50,
+      current: user?.tokens || 0,
+    },
+    {
+      name: 'Community Helper',
+      requirement: 500,
+      reward: 100,
+      current: user?.tokens || 0,
+    },
+    {
+      name: 'Master Critic',
+      requirement: 1000,
+      reward: 200,
+      current: user?.tokens || 0,
+    },
   ]
 
   return (
@@ -66,12 +113,14 @@ export function Wallet() {
       <div className="flex items-center justify-between">
         <div>
           <h1>Your Wallet</h1>
-          <p className="text-muted-foreground">Manage your Creator Tokens and rewards</p>
+          <p className="text-muted-foreground">
+            Manage your Creator Tokens and rewards
+          </p>
         </div>
         {!user?.walletAddress && (
           <Button onClick={handleConnectWallet} disabled={isConnecting}>
             <WalletIcon className="size-4 mr-2" />
-            {isConnecting ? "Connecting..." : "Connect MetaMask"}
+            {isConnecting ? 'Connecting...' : 'Connect MetaMask'}
           </Button>
         )}
       </div>
@@ -86,7 +135,9 @@ export function Wallet() {
               </div>
               <div>
                 <CardTitle>Creator Token Balance</CardTitle>
-                <CardDescription>Your learning and community contributions</CardDescription>
+                <CardDescription>
+                  Your learning and community contributions
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -115,8 +166,13 @@ export function Wallet() {
             {user?.walletAddress ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Connected</span>
-                  <Badge variant="outline" className="bg-green-50 border-green-200 text-green-800">
+                  <span className="text-sm text-muted-foreground">
+                    Connected
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className="bg-green-50 border-green-200 text-green-800"
+                  >
                     Active
                   </Badge>
                 </div>
@@ -125,7 +181,11 @@ export function Wallet() {
                     <span className="text-sm font-mono">
                       {formatWalletAddress(user.walletAddress)}
                     </span>
-                    <Button variant="ghost" size="sm" onClick={copyWalletAddress}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={copyWalletAddress}
+                    >
                       <Copy className="size-3" />
                     </Button>
                   </div>
@@ -139,9 +199,9 @@ export function Wallet() {
                 <p className="text-sm text-muted-foreground">
                   Connect MetaMask to receive tokens directly in your wallet
                 </p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleConnectWallet}
                   disabled={isConnecting}
                   className="w-full"
@@ -170,17 +230,27 @@ export function Wallet() {
             </CardHeader>
             <CardContent className="space-y-3">
               {recentTransactions.map((transaction, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <div className="size-8 bg-green-100 rounded-full flex items-center justify-center">
                       <TrendingUp className="size-4 text-green-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{transaction.description}</p>
-                      <p className="text-xs text-muted-foreground">{transaction.date}</p>
+                      <p className="text-sm font-medium">
+                        {transaction.description}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {transaction.date}
+                      </p>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="bg-green-50 text-green-800">
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-50 text-green-800"
+                  >
                     +{transaction.amount} ✨
                   </Badge>
                 </div>
@@ -200,7 +270,9 @@ export function Wallet() {
                         <Target className="size-5 text-amber-600" />
                       </div>
                       <div>
-                        <CardTitle className="text-base">{milestone.name}</CardTitle>
+                        <CardTitle className="text-base">
+                          {milestone.name}
+                        </CardTitle>
                         <CardDescription>
                           {milestone.current}/{milestone.requirement} tokens
                         </CardDescription>
@@ -210,12 +282,13 @@ export function Wallet() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Progress 
-                    value={(milestone.current / milestone.requirement) * 100} 
+                  <Progress
+                    value={(milestone.current / milestone.requirement) * 100}
                     className="h-2"
                   />
                   <p className="text-sm text-muted-foreground mt-2">
-                    {milestone.requirement - milestone.current} more tokens to unlock
+                    {milestone.requirement - milestone.current} more tokens to
+                    unlock
                   </p>
                 </CardContent>
               </Card>
@@ -227,7 +300,9 @@ export function Wallet() {
           <Card>
             <CardHeader>
               <CardTitle>How to Earn Creator Tokens</CardTitle>
-              <CardDescription>Ways to contribute and grow in the community</CardDescription>
+              <CardDescription>
+                Ways to contribute and grow in the community
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
