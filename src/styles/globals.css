@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/* ── Tema minimo: chiavi che i componenti usano (light + dark) ───────────── */
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #0b0b12;
+  --color-card: #ffffff;
+  --color-card-foreground: #0b0b12;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0b0b12;
+  --color-primary: #111827;                 /* slate-900 */
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f3f4f6;               /* gray-100 */
+  --color-secondary-foreground: #111827;
+  --color-muted: #f3f4f6;
+  --color-muted-foreground: #6b7280;
+  --color-accent: #e5e7eb;
+  --color-accent-foreground: #111827;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e5e7eb;
+  --color-input: #f9fafb;
+  --color-ring: #c7d2fe;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --color-background: #0b0b12;
+  --color-foreground: #f3f4f6;
+  --color-card: #0f1117;
+  --color-card-foreground: #f3f4f6;
+  --color-popover: #0f1117;
+  --color-popover-foreground: #f3f4f6;
+  --color-primary: #f5f6f7;
+  --color-primary-foreground: #0f1117;
+  --color-secondary: #161821;
+  --color-secondary-foreground: #e5e7eb;
+  --color-muted: #12141c;
+  --color-muted-foreground: #9ca3af;
+  --color-accent: #12141c;
+  --color-accent-foreground: #e5e7eb;
+  --color-destructive: #f87171;
+  --color-destructive-foreground: #0b0b12;
+  --color-border: #1f2330;
+  --color-input: #12141c;
+  --color-ring: #334155;
+}
+
+@layer base {
+  html { color-scheme: light dark; }
+  body { @apply min-h-screen bg-background text-foreground antialiased; }
+}
+
+/* ── Primitive riutilizzabili (btn, card, input, badge) ──────────────────── */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-md px-4 py-2 text-sm font-medium
+           bg-primary text-primary-foreground
+           border border-transparent
+           transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60;
+  }
+  .btn:hover    { @apply opacity-90; }
+  .btn-outline  { @apply bg-transparent text-foreground border-border; }
+  .btn-muted    { @apply bg-muted text-muted-foreground; }
+
+  .card {
+    @apply bg-card text-card-foreground rounded-lg border border-border shadow-sm;
+  }
+
+  .input {
+    @apply w-full rounded-md border border-border bg-input
+           px-3 py-2 text-sm
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5
+           bg-accent text-accent-foreground text-xs font-medium;
+  }
+}
