@@ -199,17 +199,22 @@ export async function getSubmission(submissionId: number): Promise<Result<Submis
 /** Invio review */
 export async function sendReview(
   submissionId: number,
-  payload: { score?: number; decision?: string; comment?: string },
+  payload: { score?: number; decision?: string; comment?: string; technical?: number; creative?: number; following?: number; recommendations?: string[] },
   exerciseId?: number
 ): Promise<Result<any>> {
   const body: any = {
-    // send only score and comment; decision is optional and many backends derive status from score
+    // legacy fields kept for backwards compatibility
     score: payload.score,
-  // some backends expect 'grade' as field name
-  grade: payload.score,
+    grade: payload.score,
     comment: payload.comment ?? "",
   }
   if (payload.decision) body.decision = payload.decision
+  // new breakdown fields (1-5) expected by updated backends
+  if (typeof payload.technical === "number") body.technical = payload.technical
+  if (typeof payload.creative === "number") body.creative = payload.creative
+  if (typeof payload.following === "number") body.following = payload.following
+  // recommendations can be an array of up to a few strings
+  if (Array.isArray(payload.recommendations) && payload.recommendations.length) body.recommendations = payload.recommendations
   // prefer cached endpoint if available to avoid POSTing to many 404s
   // Build candidate paths. If caller provided an exerciseId, prefer the exercise-scoped endpoint
   const makePaths = () => {

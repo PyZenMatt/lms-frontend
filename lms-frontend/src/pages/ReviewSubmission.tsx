@@ -22,6 +22,9 @@ export default function ReviewSubmission() {
   const [studentName, setStudentName] = React.useState<string | undefined>(undefined)
 
   const [score, setScore] = React.useState<number | "">("")
+  const [technical, setTechnical] = React.useState<number | "">("")
+  const [creative, setCreative] = React.useState<number | "">("")
+  const [following, setFollowing] = React.useState<number | "">("")
   const [comment, setComment] = React.useState<string>("")
   const [submitting, setSubmitting] = React.useState(false)
   const [submittedMsg, setSubmittedMsg] = React.useState<string | null>(null)
@@ -73,13 +76,28 @@ export default function ReviewSubmission() {
     setSubmittedMsg(null)
     setError(null)
     const numericScore = typeof score === "number" ? score : undefined
+    const tech = typeof technical === "number" ? technical : undefined
+    const creat = typeof creative === "number" ? creative : undefined
+    const foll = typeof following === "number" ? following : undefined
     if (numericScore !== undefined && (numericScore < 1 || numericScore > 10)) {
       setError("Il punteggio deve essere compreso tra 1 e 10.")
       setSubmitting(false)
       return
     }
-    const payload = { score: numericScore, comment: comment?.trim() || undefined }
-  const res = await sendReview(submissionId, payload, exerciseId)
+    // If reviewer provided the 3 sub-scores (1-5) prefer sending them
+    let payload: any
+    if (tech && creat && foll) {
+      // send breakdown fields (backend will compute legacy score)
+      payload = {
+        technical: tech,
+        creative: creat,
+        following: foll,
+        comment: comment?.trim() || undefined,
+      }
+    } else {
+      payload = { score: numericScore, comment: comment?.trim() || undefined }
+    }
+    const res = await sendReview(submissionId, payload, exerciseId)
     setSubmitting(false)
     if (!res.ok) {
       setError(`Invio review non riuscito (HTTP ${res.status}). Probabilmente il backend non espone un endpoint per la submission. (${res.error ?? ""})`)
@@ -153,7 +171,23 @@ export default function ReviewSubmission() {
                     setScore(v === "" ? "" : Math.max(1, Math.min(10, Number(v))))
                   }}
                   className="h-9 w-full rounded-md border px-2"
+                  disabled={submitting || !!submittedMsg}
                 />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Breakdown (1–5)</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <input type="number" min={1} max={5} placeholder="T" value={technical}
+                    onChange={(e) => { const v = e.target.value; setTechnical(v === "" ? "" : Math.max(1, Math.min(5, Number(v)))) }}
+                    className="h-9 w-full rounded-md border px-2" disabled={submitting || !!submittedMsg} />
+                  <input type="number" min={1} max={5} placeholder="C" value={creative}
+                    onChange={(e) => { const v = e.target.value; setCreative(v === "" ? "" : Math.max(1, Math.min(5, Number(v)))) }}
+                    className="h-9 w-full rounded-md border px-2" disabled={submitting || !!submittedMsg} />
+                  <input type="number" min={1} max={5} placeholder="F" value={following}
+                    onChange={(e) => { const v = e.target.value; setFollowing(v === "" ? "" : Math.max(1, Math.min(5, Number(v)))) }}
+                    className="h-9 w-full rounded-md border px-2" disabled={submitting || !!submittedMsg} />
+                </div>
+                <div className="text-xs text-muted-foreground">If you fill all three fields, the breakdown will be submitted instead of the 1–10 score.</div>
               </div>
             </div>
 

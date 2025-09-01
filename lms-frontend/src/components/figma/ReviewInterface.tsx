@@ -1,11 +1,12 @@
 import { useState } from "react"
+import { sendReview } from "../../services/reviews"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
 import { Textarea } from "./ui/textarea"
 import { Label } from "./ui/label"
 import { Progress } from "./ui/progress"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { Avatar, AvatarFallback } from "./ui/avatar"
 import { 
   ArrowLeft, 
   Star, 
@@ -45,7 +46,7 @@ interface ReviewScores {
 }
 
 export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterfaceProps) {
-  const { user, updateTokens } = useAuth()
+  const { updateTokens } = useAuth()
   const [currentStep, setCurrentStep] = useState(1)
   const [scores, setScores] = useState<ReviewScores>({
     technical: 0,
@@ -55,6 +56,8 @@ export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterf
   const [feedback, setFeedback] = useState("")
   const [strengthsHighlight, setStrengthsHighlight] = useState("")
   const [improvementSuggestions, setImprovementSuggestions] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   const totalSteps = 4
   const progress = (currentStep / totalSteps) * 100
@@ -79,14 +82,38 @@ export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterf
   }
 
   const handleSubmitReview = () => {
-    const averageScore = (scores.technical + scores.creative + scores.instructions) / 3
-    
-    updateTokens(5) // Reward for completing review
-    toast("Review submitted successfully! ✨", {
-      description: "You earned 5 tokens for helping a fellow artist grow"
-    })
-    
-    onComplete()
+    if (submitting || submitted) return
+    setSubmitting(true)
+    const payload = {
+      technical: scores.technical || undefined,
+      creative: scores.creative || undefined,
+      following: scores.instructions || undefined,
+      // also send a concise comment combining strengths/suggestions/feedback
+      comment: `${strengthsHighlight.trim()}\n\nSuggestions:\n${improvementSuggestions.trim()}\n\nFinal:\n${feedback.trim()}`.trim(),
+      recommendations: [],
+    }
+    // send the review (best-effort, endpoint discovery is handled in service)
+    ;(async () => {
+      try {
+        const res = await sendReview(Number(submission.id), payload)
+        if (res.ok) {
+          updateTokens(5)
+          setSubmitted(true)
+          toast("Review submitted successfully! ✨", {
+            description: "You earned 5 tokens for helping a fellow artist grow"
+          })
+          // allow parent to cleanup/navigate after a short delay
+          setTimeout(() => onComplete(), 900)
+        } else {
+          toast.error?.(`Review submission failed: HTTP ${res.status}`)
+        }
+      } catch (err) {
+        console.error(err)
+        toast.error?.("Review submission failed")
+      } finally {
+        setSubmitting(false)
+      }
+    })()
   }
 
   const StarRating = ({ value, onChange, label }: { value: number, onChange: (value: number) => void, label: string }) => (
@@ -405,11 +432,11 @@ export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterf
               ) : (
                 <Button 
                   onClick={handleSubmitReview}
-                  disabled={!canProceedToNext()}
+                  disabled={!canProceedToNext() || submitting || submitted}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <Upload className="size-4 mr-2" />
-                  Submit Review (+5 ✨)
+                  {submitting ? 'Submitting…' : submitted ? 'Submitted' : 'Submit Review (+5 ✨)'}
                 </Button>
               )}
             </div>
