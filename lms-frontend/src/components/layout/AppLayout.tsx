@@ -21,7 +21,10 @@ import {
 import { Wallet as WalletIcon, User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
 
 export default function AppLayout({ children }: { children?: React.ReactNode }) {
-  const [collapsed, setCollapsed] = React.useState(false);
+  // derive location early so collapsed can be correct on first render
+  const location = useLocation();
+  const path = location?.pathname ?? "";
+  const [collapsed, setCollapsed] = React.useState(() => (path.startsWith('/peer-review')));
   const [mobileOpen, setMobileOpen] = React.useState(false);
   // removed isDesktop state and resize listener — layout now relies on CSS overrides
   React.useEffect(() => {
@@ -44,9 +47,6 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
     return () => {};
   }, [mobileOpen]);
   const { logout, user } = useAuth();
-  const location = useLocation();
-  const path = location?.pathname ?? "";
-
   const navigate = useNavigate();
 
   // derive the sidebar "page" token from the current pathname
@@ -71,6 +71,14 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
     path === "/login" || path === "/register" || path.startsWith("/verify-email");
 
   // sidebar data and footer are provided by the Figma AppSidebar component
+
+  // When navigating to certain full-bleed pages (like peer-review) we want
+  // the sidebar collapsed so the main content isn't pushed by the header/main
+  // spacer (which uses md:pl-[var(--sidebar-width)]). Keep behavior simple:
+  // collapse when currentPage is 'peer-review' and expand otherwise.
+  React.useEffect(() => {
+    setCollapsed(currentPage === 'peer-review')
+  }, [currentPage])
 
   // If we're on an auth route, render a minimal shell without the app chrome
   if (isAuthRoute) {
@@ -137,7 +145,7 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
           <div className="flex-1 flex flex-col min-h-0">
           {/* Header: use Figma Menubar styling 1:1 (minimal content, no subcomponents) */}
           <header className="sticky top-0 z-40 border-b border-border bg-card/60 backdrop-blur w-full">
-            <div className={"w-full flex h-14 items-center px-4 lg:px-6 transition-[padding-left] duration-200 " + (collapsed ? "md:pl-0" : "md:pl-[var(--sidebar-width)]") }>
+            <div className={"w-full flex h-14 items-center px-4 lg:px-6 transition-[padding-left] duration-200"}>
               <SidebarTrigger className="mr-4" />
               <div className="flex-1" />
               <div className="flex items-center gap-4">
@@ -199,7 +207,7 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
           </header>
 
           <main className="flex-1 overflow-auto">
-            <div className={"w-full py-6 px-4 lg:px-6 transition-[padding-left] duration-200 " + (collapsed ? "md:pl-0" : "md:pl-[var(--sidebar-width)]")}>
+            <div className={"w-full py-6 px-4 lg:px-6 transition-[padding-left] duration-200"}> 
               <div className="max-w-[1280px] mx-auto">{children}</div>
             </div>
           </main>

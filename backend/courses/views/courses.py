@@ -300,8 +300,8 @@ class CourseOutlineAPIView(generics.RetrieveAPIView):
                         if sub:
                             passed = bool(sub.passed or sub.is_approved)
 
-                    # exercise unlocked when the lesson itself is completed, or when the lesson is sequentially unlocked
-                    exercise_unlocked = is_completed or sequential_unlocked
+                    # exercise unlocked only when the lesson itself is completed
+                    exercise_unlocked = is_completed
                     exercise_payload = {
                         "id": first_ex.id,
                         "title": first_ex.title,

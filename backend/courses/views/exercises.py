@@ -244,23 +244,57 @@ class ReviewExerciseView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        # Accept either legacy `score` (1-10) or breakdown fields (1-5)
         score = request.data.get("score")
-        if not score or not (1 <= int(score) <= 10):
-            return Response(
-                {"error": "Il punteggio deve essere compreso tra 1 e 10."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        technical = request.data.get("technical")
+        creative = request.data.get("creative")
+        following = request.data.get("following")
+        comment = request.data.get("comment")
+        recommendations = request.data.get("recommendations")
 
         review = get_object_or_404(
             ExerciseReview, submission=submission, reviewer=request.user
         )
-        if review.score is not None:
+        if review.score is not None or (review.technical is not None and review.creative is not None and review.following is not None):
             return Response(
                 {"error": "Hai già valutato questo esercizio."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        review.score = int(score)
+        # Validate and apply breakdown if present
+        if technical is not None or creative is not None or following is not None:
+            try:
+                t = int(technical) if technical is not None else None
+                c = int(creative) if creative is not None else None
+                f = int(following) if following is not None else None
+            except Exception:
+                return Response({"error": "I breakdown devono essere numeri interi."}, status=status.HTTP_400_BAD_REQUEST)
+            # If any field present, require all three to be integer 1..5 (allow nulls only if explicitly skipped)
+            if any(v is None for v in (t, c, f)):
+                return Response({"error": "Devi inviare technical, creative e following o nessuno."}, status=status.HTTP_400_BAD_REQUEST)
+            if not all(1 <= v <= 5 for v in (t, c, f)):
+                return Response({"error": "I valori breakdown devono essere compresi tra 1 e 5."}, status=status.HTTP_400_BAD_REQUEST)
+            review.technical = t
+            review.creative = c
+            review.following = f
+            # compute legacy score in 1-10 scale for compatibility
+            review.score = int(round(((t + c + f) / 3.0) * 2.0))
+        else:
+            # Fallback to legacy score
+            if not score or not (1 <= int(score) <= 10):
+                return Response(
+                    {"error": "Il punteggio deve essere compreso tra 1 e 10."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            review.score = int(score)
+
+        # optional comment and recommendations
+        if comment is not None:
+            review.comment = str(comment)
+        if recommendations is not None:
+            # Expecting list-like or JSON string
+            review.recommendations = recommendations
+
         review.reviewed_at = timezone.now()
         review.save()
 
@@ -504,20 +538,36 @@ class AssignedReviewsView(APIView):
         reviews = ExerciseReview.objects.filter(
             reviewer=request.user, score__isnull=True
         )
-        data = [
-            {
-                "pk": r.pk,  # review id
-                "submission_id": r.submission.pk,
-                "submission_pk": r.submission.pk,  # backward compat
-                "exercise_id": getattr(r.submission, "exercise_id", None),
-                "exercise_title": r.submission.exercise.title,
-                "assigned_at": r.assigned_at,
-                "student_username": (
-                    r.submission.student.username if r.submission.student else None
-                ),
-            }
-            for r in reviews
-        ]
+        data = []
+        for r in reviews:
+            sub = getattr(r, "submission", None)
+            exercise = getattr(sub, "exercise", None) if sub else None
+            course_id = None
+            lesson_id = None
+            if exercise and getattr(exercise, "lesson", None) and getattr(exercise.lesson, "course", None):
+                course_id = exercise.lesson.course.id
+                lesson_id = exercise.lesson.id
+            student_obj = None
+            if sub and getattr(sub, "student", None):
+                student_obj = {"id": sub.student.id, "name": getattr(sub.student, "username", None)}
+            status = None
+            if sub:
+                status = "reviewed" if getattr(sub, "reviewed", False) else "pending"
+            data.append(
+                {
+                    "pk": r.pk,
+                    "submission_id": sub.pk if sub else None,
+                    "submission_pk": sub.pk if sub else None,
+                    "exercise_id": getattr(sub, "exercise_id", None) if sub else None,
+                    "exercise_title": exercise.title if exercise else None,
+                    "assigned_at": r.assigned_at,
+                    "student": student_obj,
+                    "course_id": course_id,
+                    "lesson_id": lesson_id,
+                    "submitted_at": getattr(sub, "created_at", None) if sub else None,
+                    "status": status,
+                }
+            )
         return Response(data)
 
 

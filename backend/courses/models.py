@@ -568,17 +568,35 @@ class ExerciseReview(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     score = models.IntegerField(null=True, blank=True)
+    # Breakdown fields (scale 1..5) — nullable for backward compatibility
+    technical = models.SmallIntegerField(null=True, blank=True)
+    creative = models.SmallIntegerField(null=True, blank=True)
+    following = models.SmallIntegerField(null=True, blank=True)
+    # Optional free-text comment and recommendations array (JSON)
+    comment = models.TextField(null=True, blank=True)
+    recommendations = models.JSONField(null=True, blank=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
 
     @staticmethod
     def calculate_average_score(submission):
         reviews = submission.reviews.all()
         if reviews.exists():
-            average = reviews.aggregate(models.Avg("score"))["score__avg"]
+            # We keep submission.average_score in the 1-10 scale for backward
+            # compatibility. For reviews that provide a 3-field breakdown (1-5)
+            # we convert to 1-10 by multiplying the mean by 2. Legacy reviews that
+            # only have `score` are assumed to already be 1-10.
+            vals = []
+            for r in reviews:
+                if r.technical is not None and r.creative is not None and r.following is not None:
+                    mean_1_5 = (r.technical + r.creative + r.following) / 3.0
+                    vals.append(mean_1_5 * 2.0)
+                elif r.score is not None:
+                    vals.append(float(r.score))
+            average = sum(vals) / len(vals) if vals else None
             submission.average_score = average
-            # Approvato solo se almeno 3 review e media >= 6
+            # Approvato solo se almeno 3 review e media (1-10) >= 5 (equiv. 2.5 on 1-5)
             if reviews.count() >= 3:
-                submission.is_approved = average >= 6
+                submission.is_approved = (average is not None and average >= 5)
             submission.save()
             return submission.is_approved if reviews.count() >= 3 else None
         return None

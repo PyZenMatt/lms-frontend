@@ -108,12 +108,9 @@ export function PeerReview() {
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="bg-blue-50 border-blue-200">
             <Eye className="size-3 mr-1" />
-            3 pending reviews
+            {loadingAssigned ? 'Loading…' : assignedError ? 'Errore caricamento' : `${assigned.length} pending review${assigned.length === 1 ? '' : 's'}`}
           </Badge>
-          <Button>
-            <Upload className="size-4 mr-2" />
-            Submit Exercise
-          </Button>
+          {/* Submit Exercise button intentionally removed for peer-review page */}
         </div>
       </div>
 

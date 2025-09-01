@@ -55,6 +55,10 @@ class ExerciseSubmissionSerializer(serializers.ModelSerializer):
     passed = serializers.BooleanField(read_only=True)
     reviews = serializers.SerializerMethodField()
     exercise = serializers.SerializerMethodField()
+    exercise_id = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+    text = serializers.SerializerMethodField()
+    student = serializers.SerializerMethodField()
     reward_amount = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -62,7 +66,10 @@ class ExerciseSubmissionSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "exercise",
+            "exercise_id",
+            "title",
             "content",
+            "text",
             "created_at",
             "average_score",
             "is_approved",
@@ -86,15 +93,39 @@ class ExerciseSubmissionSerializer(serializers.ModelSerializer):
             }
         return None
 
+    # Additional helper fields for frontend compatibility
+    def get_exercise_id(self, obj):
+        return obj.exercise.id if obj.exercise else None
+
+    def get_title(self, obj):
+        return obj.exercise.title if obj.exercise else None
+
+    def get_text(self, obj):
+        return obj.content
+
     def get_reviews(self, obj):
-        return [
-            {
-                "reviewer": r.reviewer.username,
-                "score": r.score,
-                "reviewed_at": r.reviewed_at,
-            }
-            for r in obj.reviews.all()
-        ]
+        result = []
+        for r in obj.reviews.all():
+            result.append(
+                {
+                    "id": getattr(r, "id", None),
+                    "reviewer": r.reviewer.username if getattr(r, "reviewer", None) else None,
+                    "reviewer_id": getattr(r.reviewer, "id", None) if getattr(r, "reviewer", None) else None,
+                    "score": r.score,
+                    "technical": getattr(r, "technical", None),
+                    "creative": getattr(r, "creative", None),
+                    "following": getattr(r, "following", None),
+                    "comment": getattr(r, "comment", None),
+                    "recommendations": getattr(r, "recommendations", None),
+                    "reviewed_at": r.reviewed_at,
+                }
+            )
+        return result
+
+    def get_student(self, obj):
+        if getattr(obj, "student", None):
+            return {"id": obj.student.id, "name": getattr(obj.student, "username", None)}
+        return None
 
     def validate(self, attrs):
         # Verifica che il contenuto non sia vuoto
