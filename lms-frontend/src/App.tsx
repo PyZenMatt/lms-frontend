@@ -16,6 +16,7 @@ import ReviewsAssigned from "./pages/ReviewsAssigned"
 import ReviewSubmission from "./pages/ReviewSubmission"
 import ReviewsHistory from "./pages/ReviewsHistory"
 import { ProtectedRoute, RoleRoute } from "./routes/ProtectedRoute";
+import { PeerReview } from "@/components/figma/PeerReview";
 // TeacherChoicesPage removed - use sidebar inbox (TeacherDecisionNav) instead
 import CoursesList from "./pages/CoursesList";
 import Notifications from "./pages/Notifications";
@@ -156,6 +157,24 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ErrorBoundary><ProfilePage /></ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Peer Review pages */}
+          <Route
+            path="/peer-review"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary><PeerReview /></ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/courses/:id/peer-review"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary><PeerReview /></ErrorBoundary>
               </ProtectedRoute>
             }
           />

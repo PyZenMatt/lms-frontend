@@ -2,29 +2,16 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { Avatar, AvatarFallback } from "./ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { Progress } from "./ui/progress"
-import { Textarea } from "./ui/textarea"
-import { Label } from "./ui/label"
-import { Slider } from "./ui/slider"
-import { 
-  Upload, 
-  Clock, 
-  CheckCircle, 
-  Star, 
-  MessageCircle, 
-  Eye, 
-  Award,
-  Users,
-  BookOpen,
-  Sparkles
-} from "lucide-react"
+// removed unused UI imports; ReviewInterface owns the form UI
+import { Upload, Star, Eye, Award, Users, Sparkles } from "lucide-react"
 import { ImageWithFallback } from "./figma/ImageWithFallback"
 import { ReviewInterface } from "./ReviewInterface"
-import { useAuth } from "./AuthContext"
+import { listAssignedReviews, getSubmission, type AssignedReview, type Submission as ReviewSubmission } from "../../services/reviews"
+import React from "react"
 
-interface Submission {
+interface UISubmission {
   id: string
   studentNote: string
   course: string
@@ -37,50 +24,64 @@ interface Submission {
 }
 
 export function PeerReview() {
-  const { user } = useAuth()
   const [currentView, setCurrentView] = useState<'list' | 'reviewing'>('list')
-  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
+  const [selectedSubmission, setSelectedSubmission] = useState<UISubmission | null>(null)
 
-  // Mock submissions data
-  const pendingSubmissions: Submission[] = [
-    {
-      id: '1',
-      studentNote: "I tried to show the contrast between warm afternoon light and cool shadows. I'm not sure if the transition feels natural - any tips would be appreciated!",
-      course: 'Digital Painting Fundamentals',
-      lesson: 'Lesson 3: Color Theory',
-      exerciseTitle: 'Create a color temperature study',
-      exerciseDescription: 'Paint a simple scene demonstrating the contrast between warm and cool colors, focusing on how light temperature affects the mood of your artwork.',
-      image: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=600&h=400&fit=crop&crop=center',
-      submittedAt: '2 hours ago',
-      studentId: 'student1'
-    },
-    {
-      id: '2',
-      studentNote: "First time drawing full body characters. I think the proportions might be off but I'm not sure where exactly. Looking forward to feedback!",
-      course: 'Character Design Workshop',
-      lesson: 'Lesson 1: Basic Proportions',
-      exerciseTitle: 'Character proportion studies',
-      exerciseDescription: 'Create three character sketches showing different body types while maintaining proper proportional relationships.',
-      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop&crop=center',
-      submittedAt: '5 hours ago',
-      studentId: 'student2'
-    },
-    {
-      id: '3',
-      studentNote: "I focused on creating dramatic lighting but I'm struggling with the cast shadows. Would love advice on making them more believable.",
-      course: 'Digital Painting Fundamentals',
-      lesson: 'Lesson 2: Light & Shadow',
-      exerciseTitle: 'Light and shadow study',
-      exerciseDescription: 'Create a still life study focusing on the relationship between light source, form shadows, and cast shadows.',
-      image: 'https://images.unsplash.com/photo-1578228406113-77951bb64eff?w=600&h=400&fit=crop&crop=center',
-      submittedAt: '1 day ago',
-      studentId: 'student3'
+  const [assigned, setAssigned] = React.useState<AssignedReview[]>([])
+  const [loadingAssigned, setLoadingAssigned] = React.useState(false)
+  const [assignedError, setAssignedError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    let mounted = true
+    async function load() {
+      setLoadingAssigned(true)
+      setAssignedError(null)
+      const res = await listAssignedReviews()
+      if (!mounted) return
+      if (res.ok) setAssigned(res.data)
+      else setAssignedError(`Impossibile caricare le revisioni assegnate (HTTP ${res.status})`)
+      setLoadingAssigned(false)
     }
-  ]
+    load()
+    return () => { mounted = false }
+  }, [])
 
-  const handleStartReview = (submission: Submission) => {
-    setSelectedSubmission(submission)
-    setCurrentView('reviewing')
+  // when reviewer clicks start, fetch the full submission detail and open review UI
+  const handleStartReview = async (it: AssignedReview) => {
+    const idToFetch = it.submission_id ?? it.exercise_id
+    if (!idToFetch) return
+    const res = await getSubmission(Number(idToFetch))
+    if (res.ok) {
+      const data: ReviewSubmission = res.data
+      const ui: UISubmission = {
+        id: String(data.id ?? idToFetch),
+        studentNote: data.text ?? "",
+        course: data.course_id ? String(data.course_id) : (it.course_id ? String(it.course_id) : ""),
+        lesson: data.lesson_id ? String(data.lesson_id) : (it.lesson_id ? String(it.lesson_id) : ""),
+        exerciseTitle: data.title ?? it.exercise_title ?? `Esercizio #${data.exercise_id ?? it.exercise_id ?? idToFetch}`,
+        exerciseDescription: data.text ?? "",
+        image: data.files && data.files.length > 0 ? String(data.files[0].url) : "",
+        submittedAt: String(it.submitted_at ?? data.created_at ?? ""),
+        studentId: String(data.student?.id ?? it.student?.id ?? ""),
+      }
+      setSelectedSubmission(ui)
+      setCurrentView('reviewing')
+    } else {
+      // fallback: open a minimal synthesised submission when backend detail not available
+      const ui: UISubmission = {
+        id: String(idToFetch),
+        studentNote: "",
+        course: it.course_id ? String(it.course_id) : "",
+        lesson: it.lesson_id ? String(it.lesson_id) : "",
+        exerciseTitle: it.exercise_title ?? `Esercizio #${it.exercise_id ?? idToFetch}`,
+        exerciseDescription: "",
+        image: "",
+        submittedAt: "",
+        studentId: "",
+      }
+      setSelectedSubmission(ui)
+      setCurrentView('reviewing')
+    }
   }
 
   const handleCompleteReview = () => {
@@ -140,196 +141,50 @@ export function PeerReview() {
           </Card>
 
           <div className="space-y-4">
-            {/* Review Assignment 1 */}
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarImage src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face" />
-                    <AvatarFallback>AN</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="font-medium">Anonymous Student</p>
-                    <p className="text-sm text-muted-foreground">Digital Painting Fundamentals • Lesson 3: Color Theory</p>
-                  </div>
-                  <Badge variant="outline">Due in 2 days</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium mb-2">Exercise: Create a color temperature study</p>
-                  <ImageWithFallback 
-                    src="https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=600&h=400&fit=crop&crop=center"
-                    alt="Student color temperature study"
-                    className="w-full h-48 rounded-lg object-cover"
-                  />
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm font-medium mb-1">Student's Note:</p>
-                  <p className="text-sm text-muted-foreground">"I tried to show the contrast between warm afternoon light and cool shadows. I'm not sure if the transition feels natural - any tips would be appreciated!"</p>
-                </div>
-                <Button 
-                  className="w-full"
-                  onClick={() => handleStartReview(pendingSubmissions[0])}
-                >
-                  Start Review (+5 ✨)
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Review Assignment 2 */}
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback>BS</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="font-medium">Anonymous Student</p>
-                    <p className="text-sm text-muted-foreground">Character Design Workshop • Lesson 1: Basic Proportions</p>
-                  </div>
-                  <Badge variant="outline">Due in 4 days</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium mb-2">Exercise: Character proportion studies</p>
-                  <ImageWithFallback 
-                    src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop&crop=center"
-                    alt="Character proportion sketches"
-                    className="w-full h-48 rounded-lg object-cover"
-                  />
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm font-medium mb-1">Student's Note:</p>
-                  <p className="text-sm text-muted-foreground">"First time drawing full body characters. I think the proportions might be off but I'm not sure where exactly. Looking forward to feedback!"</p>
-                </div>
-                <Button 
-                  className="w-full" 
-                  variant="outline"
-                  onClick={() => handleStartReview(pendingSubmissions[1])}
-                >
-                  Start Review (+5 ✨)
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* In Progress Review */}
-            <Card className="border-amber-200 bg-amber-50/50">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback>CS</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="font-medium">Anonymous Student</p>
-                    <p className="text-sm text-muted-foreground">Digital Painting Fundamentals • Lesson 2: Light & Shadow</p>
-                  </div>
-                  <Badge className="bg-amber-100 text-amber-800">In Progress</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <p className="text-sm font-medium">Review Progress</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Technical Skills</span>
-                      <span>4/5</span>
+            {loadingAssigned ? (
+              <div className="text-sm text-muted-foreground">Caricamento assegnamenti…</div>
+            ) : assignedError ? (
+              <div className="text-sm text-rose-600">{assignedError}</div>
+            ) : assigned.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Nessuna revisione assegnata al momento.</div>
+            ) : (
+              assigned.map((it, idx) => (
+                <Card key={String(it.submission_id ?? it.exercise_id ?? idx)}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarFallback>{(it.student?.name ?? 'AN').slice(0,2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-medium">{it.student?.name ?? 'Studente anonimo'}</p>
+                        <p className="text-sm text-muted-foreground">{it.exercise_title ?? `Esercizio ${it.exercise_id}`} • {it.course_id ? `Corso ${it.course_id}` : ''}</p>
+                      </div>
+                      <Badge variant="outline">{it.submitted_at ? new Date(it.submitted_at).toLocaleString() : 'In attesa'}</Badge>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Creative Expression</span>
-                      <span>3/5</span>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium mb-2">{it.exercise_title ?? `Esercizio ${it.exercise_id}`}</p>
+                      <ImageWithFallback 
+                        src={undefined}
+                        alt="Artwork preview"
+                        className="w-full h-48 rounded-lg object-cover bg-slate-100"
+                      />
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Following Instructions</span>
-                      <span>5/5</span>
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <p className="text-sm font-medium mb-1">Student's Note:</p>
+                      <p className="text-sm text-muted-foreground">{it.status ?? ''}</p>
                     </div>
-                  </div>
-                </div>
-                <Button className="w-full">
-                  Continue Review
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="my-submissions" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Recent Submission */}
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base">Color Temperature Study</CardTitle>
-                    <CardDescription>Digital Painting Fundamentals • Lesson 3</CardDescription>
-                  </div>
-                  <Badge className="bg-blue-100 text-blue-800">
-                    <Clock className="size-3 mr-1" />
-                    Reviewing
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <ImageWithFallback 
-                  src="https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=300&h=200&fit=crop&crop=center"
-                  alt="My color temperature study"
-                  className="w-full h-32 rounded-lg object-cover"
-                />
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <p className="text-lg font-medium">2</p>
-                      <p className="text-xs text-muted-foreground">Reviews</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-medium">1</p>
-                      <p className="text-xs text-muted-foreground">Pending</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Submitted 1 day ago</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Completed Submission */}
-            <Card className="border-green-200 bg-green-50/50">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base">Light & Shadow Study</CardTitle>
-                    <CardDescription>Digital Painting Fundamentals • Lesson 2</CardDescription>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">
-                    <CheckCircle className="size-3 mr-1" />
-                    Complete
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <ImageWithFallback 
-                  src="https://images.unsplash.com/photo-1578228406113-77951bb64eff?w=300&h=200&fit=crop&crop=center"
-                  alt="My light and shadow study"
-                  className="w-full h-32 rounded-lg object-cover"
-                />
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <p className="text-lg font-medium">4.2</p>
-                      <p className="text-xs text-muted-foreground">Avg Rating</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-medium">3</p>
-                      <p className="text-xs text-muted-foreground">Reviews</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary">+12 ✨</Badge>
-                </div>
-                <Button variant="outline" size="sm" className="w-full">
-                  View Feedback
-                </Button>
-              </CardContent>
-            </Card>
+                    <Button 
+                      className="w-full"
+                      onClick={() => handleStartReview(it)}
+                    >
+                      Start Review (+5 ✨)
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </TabsContent>
 

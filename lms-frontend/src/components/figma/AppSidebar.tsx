@@ -36,6 +36,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
     { title: "Dashboard", page: "teacher-dashboard", icon: GraduationCap },
     { title: "My Courses", page: "courses", icon: BookOpen },
     { title: "Students", page: "students", icon: Users },
+  { title: "Peer Review", page: "peer-review", icon: UserCheck },
     { title: "Community", page: "community", icon: Users },
     { title: "Analytics", page: "analytics", icon: Trophy },
   ]

@@ -54,7 +54,7 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
     const p = (path || "").toLowerCase();
     if (p === "/" || p === "/dashboard") return "dashboard";
     if (p.startsWith("/courses")) return "courses";
-    if (p.startsWith("/peer-review")) return "peer-review";
+  if (p.startsWith("/peer-review")) return "peer-review";
     if (p.startsWith("/community")) return "community";
     if (p.startsWith("/gallery")) return "gallery";
     if (p.startsWith("/discussions")) return "discussions";
@@ -99,8 +99,8 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                   case "courses":
                     return "/courses";
                   // peer-review in the app is routed to assigned reviews
-                  case "peer-review":
-                    return "/reviews/assigned";
+          case "peer-review":
+            return "/peer-review";
                   case "community":
                     return "/community";
                   case "gallery":

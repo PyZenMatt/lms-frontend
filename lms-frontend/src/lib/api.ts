@@ -31,8 +31,9 @@ const DEFAULT_BASE = "http://127.0.0.1:8000/api";
 const RAW_BASE = (import.meta as any)?.env?.VITE_API_BASE_URL || DEFAULT_BASE;
 const BASE = normalizeBase(RAW_BASE);
 
-// SimpleJWT refresh endpoint path (relative to BASE)
-export const API_REFRESH_PATH = "/auth/refresh/";
+// SimpleJWT refresh endpoint path (relative to BASE).
+// Backend exposes JWT refresh at /api/v1/token/refresh/ (see authentication.urls)
+export const API_REFRESH_PATH = "/v1/token/refresh/";
 
 // ---- Token storage (localStorage) ----
 const TOKENS_KEY = "auth_tokens"; // { access: string, refresh: string }
