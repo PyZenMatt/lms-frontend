@@ -220,6 +220,16 @@ class TeacherDashboardAPI(APIView):
                 "can_withdraw": False,
             }
 
+        # derive published/draft counts (retroactive from DB)
+        try:
+            published_count = courses.filter(status="published").count()
+        except Exception:
+            published_count = 0
+        try:
+            draft_count = courses.filter(status="draft").count()
+        except Exception:
+            draft_count = 0
+
         data = {
             "blockchain_balance": blockchain_balance,
             "teocoin_balance": teocoin_balance,  # 🎯 NEW: DB balance for withdrawal
@@ -228,7 +238,14 @@ class TeacherDashboardAPI(APIView):
                 "total_courses": total_courses,
                 # Convert Decimal to string instead of float
                 "total_earnings": str(total_earnings),
+                # backward-compatible: original active_students field
                 "active_students": len(total_students_set),
+                # clearer names expected by frontend
+                "total_students": len(total_students_set),
+                "published_courses": published_count,
+                "draft_courses": draft_count,
+                # legacy potential field for pending; set to 0 if not applicable
+                "pending_courses": 0,
             },
             "sales": {
                 # Keep as Decimal, convert to string
