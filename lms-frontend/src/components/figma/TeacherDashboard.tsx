@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
@@ -23,6 +23,7 @@ import {
   Upload
 } from "lucide-react"
 import { useAuth } from "./AuthContext"
+import { getTeacherDashboard, type TeacherStats } from "../../services/teacher"
 import { ImageWithFallback } from "./figma/ImageWithFallback"
 
 interface Course {
@@ -62,42 +63,9 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
   const [isCreateLessonOpen, setIsCreateLessonOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
 
-  // Mock data for courses
-  const [courses, setCourses] = useState<Course[]>([
-    {
-      id: '1',
-      title: 'Digital Painting Fundamentals',
-      description: 'Master the basics of digital art creation with professional techniques',
-      level: 'beginner',
-      thumbnail: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=300&h=200&fit=crop&crop=center',
-      students: 42,
-      lessons: 12,
-      status: 'published',
-      createdAt: '2024-01-15'
-    },
-    {
-      id: '2',
-      title: 'Character Design Workshop',
-      description: 'Create compelling characters from concept to final render',
-      level: 'intermediate',
-      thumbnail: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=200&fit=crop&crop=center',
-      students: 28,
-      lessons: 8,
-      status: 'published',
-      createdAt: '2024-02-01'
-    },
-    {
-      id: '3',
-      title: 'Advanced Color Theory',
-      description: 'Deep dive into color psychology and advanced techniques',
-      level: 'advanced',
-      thumbnail: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=300&h=200&fit=crop&crop=center',
-      students: 0,
-      lessons: 0,
-      status: 'draft',
-      createdAt: '2024-12-17'
-    }
-  ])
+  // Courses populated from teacher dashboard API
+  const [courses, setCourses] = useState<Course[]>([])
+  const [loadingCourses, setLoadingCourses] = useState(false)
 
   const [newCourse, setNewCourse] = useState({
     title: '',
@@ -135,6 +103,48 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
   const publishedCourses = courses.filter(c => c.status === 'published')
   const draftCourses = courses.filter(c => c.status === 'draft')
   const totalStudents = courses.reduce((sum, course) => sum + course.students, 0)
+
+  const [loadingStats, setLoadingStats] = useState(false)
+  const [statsError, setStatsError] = useState<string | null>(null)
+  const [stats, setStats] = useState<TeacherStats | undefined>(undefined)
+
+  useEffect(() => {
+    let mounted = true
+    async function load() {
+      setLoadingStats(true)
+      setStatsError(null)
+      const res = await getTeacherDashboard(1, 10)
+      if (!mounted) return
+      if (res.ok) {
+        setStats(res.data.stats)
+        // normalize courses shape if present
+        try {
+          const c = res.data.courses ?? []
+          // map minimal fields expected by this component when necessary
+          const mapped = Array.isArray(c)
+            ? c.map((x: any) => ({
+                id: String(x.id),
+                title: x.title ?? x.name ?? "Untitled",
+                description: x.description ?? "",
+                level: (x.level as any) ?? 'beginner',
+                thumbnail: x.cover_url ?? x.cover_image ?? x.thumbnail ?? '',
+                students: typeof x.students_count === 'number' ? x.students_count : (x.students ?? 0),
+                lessons: typeof x.lessons_count === 'number' ? x.lessons_count : (x.lessons?.length ?? 0),
+                status: x.published || x.is_approved ? 'published' : 'draft',
+                createdAt: x.created_at ?? x.createdAt ?? '',
+              }))
+            : []
+          setCourses(mapped)
+        } catch (e) {
+          console.debug('Failed to map teacher courses', e)
+        }
+      }
+      else setStatsError(`Unable to load teacher dashboard (HTTP ${res.status})`)
+      setLoadingStats(false)
+    }
+    load()
+    return () => { mounted = false }
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -224,7 +234,7 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Courses</p>
-                <p className="text-xl font-medium">{courses.length}</p>
+                <p className="text-xl font-medium">{loadingStats ? '…' : (stats?.total_courses ?? courses.length)}</p>
               </div>
             </div>
           </CardContent>
@@ -237,7 +247,7 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Students</p>
-                <p className="text-xl font-medium">{totalStudents}</p>
+                <p className="text-xl font-medium">{loadingStats ? '…' : (stats?.total_students ?? totalStudents)}</p>
               </div>
             </div>
           </CardContent>
@@ -250,7 +260,7 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Published</p>
-                <p className="text-xl font-medium">{publishedCourses.length}</p>
+                <p className="text-xl font-medium">{loadingStats ? '…' : (stats?.pending_courses !== undefined ? (stats?.total_courses ?? publishedCourses.length) : publishedCourses.length)}</p>
               </div>
             </div>
           </CardContent>
@@ -263,7 +273,7 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Drafts</p>
-                <p className="text-xl font-medium">{draftCourses.length}</p>
+                <p className="text-xl font-medium">{loadingStats ? '…' : (stats?.pending_courses ?? draftCourses.length)}</p>
               </div>
             </div>
           </CardContent>
