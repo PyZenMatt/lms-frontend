@@ -13,6 +13,7 @@ import {
 } from "./ui/sidebar"
 import { Badge } from "./ui/badge"
 import { useAuth } from "./AuthContext"
+import useDashboardStats from "@/hooks/useDashboardStats";
 import { getUserFromToken } from "@/lib/auth"
 
 interface AppSidebarProps {
@@ -22,6 +23,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
   const { user, isTeacher } = useAuth()
+  const { stats, loading } = useDashboardStats();
 
   // Display safe username: prefer name, fall back to email or id, truncate for UI, keep full value in tooltip
   // Attempt to show an identity even if profile sync failed (401).
@@ -89,7 +91,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
                       <span>{item.title}</span>
                       {item.title === "Peer Review" && !isTeacher && (
                         <Badge variant="secondary" className="ml-auto bg-blue-100 text-blue-800">
-                          3
+                          {loading ? '…' : (stats?.pendingReviews ?? 0)}
                         </Badge>
                       )}
                     </button>
