@@ -13,13 +13,12 @@ import {
 } from "lucide-react"
 import { useAuth } from "./AuthContext"
 import { toast } from "sonner"
-import { getTransactions } from "../../services/wallet"
-import { api } from "../../lib/api"
-import { onchainMint, getTxStatus } from "../../features/wallet/walletApi"
+import { getTransactions, getDbWallet } from "../../services/wallet"
+import { getTxStatus } from "../../features/wallet/walletApi"
 import type { WalletTransaction } from "../../services/wallet"
 
 export function Wallet() {
-  const { user, connectWallet } = useAuth()
+  const { user, connectWallet, isTeacher } = useAuth()
   const [isConnecting, setIsConnecting] = useState(false)
 
   const handleConnectWallet = async () => {
@@ -56,6 +55,9 @@ export function Wallet() {
   const [txHasMore, setTxHasMore] = useState<boolean>(false)
   const [txNext, setTxNext] = useState<string | null>(null)
   const [txPrevious, setTxPrevious] = useState<string | null>(null)
+
+  // staking info (teacher-only)
+  const [stakingInfo, setStakingInfo] = useState<{ staked?: number; available?: number; total?: number } | null>(null)
 
   const nextMilestones = [
     { name: 'Art Enthusiast', requirement: 300, reward: 50, current: user?.tokens || 0 },
@@ -158,6 +160,37 @@ export function Wallet() {
   if (mounted) loadPage(txPage, false)
     return () => { mounted = false }
   }, [txPage, loadPage])
+
+  // Fetch staking/balance info for teachers (reads DB wallet raw payload for staked/available)
+  useEffect(() => {
+    let mounted = true
+    if (!isTeacher) return
+    ;(async () => {
+      try {
+        const res = await getDbWallet()
+        if (!mounted) return
+        if (!res.ok) return
+        const raw = res.data as unknown
+        // Try common shapes: { raw: { balance: { ... } } } or { balance: { ... } } or direct balance object
+        let b: Record<string, unknown> | undefined
+        if (raw && typeof raw === 'object') {
+          const top = raw as Record<string, unknown>
+          if (top.balance && typeof top.balance === 'object') b = top.balance as Record<string, unknown>
+          else if (top.raw && typeof top.raw === 'object' && (top.raw as Record<string, unknown>).balance && typeof (top.raw as Record<string, unknown>).balance === 'object') b = (top.raw as Record<string, unknown>).balance as Record<string, unknown>
+          else if (top.raw && typeof top.raw === 'object' && typeof (top.raw as Record<string, unknown>)?.staked_balance !== 'undefined') b = top.raw as Record<string, unknown>
+          else if (typeof top.staked_balance !== 'undefined' || typeof top.available_balance !== 'undefined' || typeof top.total_balance !== 'undefined') b = top
+        }
+        if (!b) return
+        const st = Number(b.staked_balance ?? b.staked ?? b.staked_teo)
+        const av = Number(b.available_balance ?? b.available ?? b.available_teo)
+        const tot = Number(b.total_balance ?? b.total ?? b.balance_teo)
+        setStakingInfo({ staked: Number.isFinite(st) ? st : undefined, available: Number.isFinite(av) ? av : undefined, total: Number.isFinite(tot) ? tot : undefined })
+      } catch (e) {
+        console.debug('[Wallet] fetch staking info failed', e)
+      }
+    })()
+    return () => { mounted = false }
+  }, [isTeacher])
 
   // Polling: query per-transaction status for any non-final transactions and update them individually.
   useEffect(() => {
@@ -332,7 +365,7 @@ export function Wallet() {
           </CardContent>
         </Card>
 
-        <Card>
+  <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">MetaMask Integration</CardTitle>
           </CardHeader>
@@ -378,6 +411,39 @@ export function Wallet() {
             )}
           </CardContent>
         </Card>
+
+        {/* Teacher-only staking summary */}
+        {isTeacher ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Staking</CardTitle>
+              <CardDescription>Staking overview (teacher only)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {stakingInfo ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">Staked</div>
+                    <div className="text-sm font-medium">{typeof stakingInfo.staked === 'number' ? stakingInfo.staked.toFixed(8) : '-'}</div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">Available</div>
+                    <div className="text-sm font-medium">{typeof stakingInfo.available === 'number' ? stakingInfo.available.toFixed(8) : '-'}</div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">Total</div>
+                    <div className="text-sm font-medium">{typeof stakingInfo.total === 'number' ? stakingInfo.total.toFixed(8) : '-'}</div>
+                  </div>
+                  <div className="pt-2">
+                    <Button variant="outline" size="sm" onClick={() => { window.location.href = '/teacher/staking' }}>Manage staking</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">Staking data unavailable</div>
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
 
       <Tabs defaultValue="activity" className="space-y-4">
