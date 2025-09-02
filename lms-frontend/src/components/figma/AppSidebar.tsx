@@ -13,6 +13,7 @@ import {
 } from "./ui/sidebar"
 import { Badge } from "./ui/badge"
 import { useAuth } from "./AuthContext"
+import { getUserFromToken } from "@/lib/auth"
 
 interface AppSidebarProps {
   currentPage: string
@@ -20,7 +21,14 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
-  const { user, isTeacher, logout } = useAuth()
+  const { user, isTeacher, logout, isAuthenticated } = useAuth()
+
+  // Display safe username: prefer name, fall back to email or id, truncate for UI, keep full value in tooltip
+  // Attempt to show an identity even if profile sync failed (401).
+  const tokenUser = getUserFromToken();
+  const tokenFallback = tokenUser ? (tokenUser.username ?? ((tokenUser.first_name || tokenUser.last_name) ? `${tokenUser.first_name ?? ""} ${tokenUser.last_name ?? ""}`.trim() : tokenUser.email)) : undefined;
+  const tooltipText = user ? (user.name ?? user.email ?? String(user.id ?? "")) : tokenFallback;
+  const displayName = tooltipText && tooltipText.length > 20 ? tooltipText.slice(0, 20) + "…" : tooltipText ?? "";
 
   const studentMenuItems = [
     { title: "Dashboard", page: "dashboard", icon: Home },
@@ -106,9 +114,12 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => onPageChange("profile")}
+              tooltip={tooltipText}
             >
               <User className="size-4" />
-              <span>{user?.name}</span>
+              {displayName ? (
+                <span className="truncate max-w-[9rem]" title={tooltipText}>{displayName}</span>
+              ) : null}
               <Badge variant="outline" className="ml-auto capitalize text-xs">
                 {user?.role}
               </Badge>

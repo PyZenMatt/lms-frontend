@@ -44,6 +44,12 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
     setIsLoading(true)
     setError("")
 
+    // Guardrail: enforce max length for name
+    if (signupForm.name && signupForm.name.length > 20) {
+      setError("Name must be 20 characters or less")
+      setIsLoading(false)
+      return
+    }
     if (signupForm.password !== signupForm.confirmPassword) {
       setError("Passwords don't match")
       setIsLoading(false)
@@ -114,7 +120,7 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
                     />
                   </div>
                   {error && (
-                    <p id="auth-form-error" className="text-sm text-destructive-foreground">{error}</p>
+                    <p id="auth-form-error" className="text-sm text-destructive">{error}</p>
                   )}
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
@@ -160,8 +166,10 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
                       placeholder="Enter your full name"
                       value={signupForm.name}
                       onChange={(e) => setSignupForm({...signupForm, name: e.target.value})}
+                      maxLength={20}
                       required
                     />
+                    <p id="signup-name-hint" className="text-xs text-muted-foreground">Max 20 characters</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
@@ -224,7 +232,7 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
                     />
                   </div>
                   {error && (
-                    <p id="auth-form-error" className="text-sm text-destructive-foreground">{error}</p>
+                    <p id="auth-form-error" className="text-sm text-destructive">{error}</p>
                   )}
                   
                   <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg border border-purple-200">
