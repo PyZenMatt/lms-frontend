@@ -19,6 +19,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/figma/ui/dropdown-menu";
 import { Wallet as WalletIcon, User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
+import ThemeToggleIcon from "@/components/ThemeToggleIcon";
 
 export default function AppLayout({ children }: { children?: React.ReactNode }) {
   // derive location early so collapsed can be correct on first render
@@ -149,6 +150,7 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
               <SidebarTrigger className="mr-4" />
               <div className="flex-1" />
               <div className="flex items-center gap-4">
+                <ThemeToggleIcon />
                 <Button
                   variant="ghost"
                   size="sm"

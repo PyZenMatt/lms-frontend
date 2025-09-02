@@ -13,9 +13,13 @@
     <script>
       (function () {
         try {
+          // saved: 'dark' | 'light' | 'system' | null
           var saved = localStorage.getItem("theme");
           var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-          var useDark = saved ? saved === "dark" : prefersDark;
+          var useDark;
+          if (saved === 'dark') useDark = true;
+          else if (saved === 'light') useDark = false;
+          else useDark = prefersDark; // saved === 'system' or null -> follow OS
           var root = document.documentElement; // <html>
           if (useDark) root.classList.add("dark");
           root.style.colorScheme = useDark ? "dark" : "light";

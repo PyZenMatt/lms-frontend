@@ -21,7 +21,7 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
-  const { user, isTeacher, logout, isAuthenticated } = useAuth()
+  const { user, isTeacher } = useAuth()
 
   // Display safe username: prefer name, fall back to email or id, truncate for UI, keep full value in tooltip
   // Attempt to show an identity even if profile sync failed (401).
@@ -125,6 +125,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
               </Badge>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          {/* Theme toggle moved to top nav */}
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
