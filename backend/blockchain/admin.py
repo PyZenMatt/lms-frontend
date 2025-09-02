@@ -185,7 +185,10 @@ class DBTeoCoinTransactionAdmin(admin.ModelAdmin):
         "created_at",
     )
     list_filter = ("transaction_type", "created_at", "user__role")
-    search_fields = ("user__username", "user__email", "description", "course_id")
+    # course_id is an integer/foreign-key column; using it in search_fields causes
+    # admin to apply `__icontains` which raises FieldError. Remove it and rely
+    # on description or related course fields if needed (e.g. course__title).
+    search_fields = ("user__username", "user__email", "description")
     readonly_fields = ("created_at",)
     date_hierarchy = "created_at"
 
