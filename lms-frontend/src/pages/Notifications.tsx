@@ -22,6 +22,7 @@ import {
   markAllNotificationsRead,
   notifyUpdated,
 } from "../services/notifications";
+import TeacherDecisionPanel from "../components/teo/TeacherDecisionPanel";
 import DrfPager from "../components/DrfPager";
 
 export default function Notifications() {
@@ -31,6 +32,7 @@ export default function Notifications() {
   const [page, setPage] = React.useState(1);
   const [pageSize] = React.useState(10);
   const [count, setCount] = React.useState<number | undefined>(undefined);
+  const [selectedDecisionId, setSelectedDecisionId] = React.useState<number | null>(null);
   const pageRef = React.useRef(page);
   React.useEffect(() => { pageRef.current = page; }, [page]);
   // Backfill via rewards missing-for-teacher is deprecated; rely solely on notifications feed
@@ -136,7 +138,23 @@ export default function Notifications() {
 
       <div className="space-y-3">
         {items.map((it) => (
-          <NotificationItem key={it.id} item={it} onMarkRead={onMarkRead} />
+          <div key={it.id}>
+            <NotificationItem item={it} onMarkRead={onMarkRead} />
+            {/* If this notification is a teocoin discount pending, allow opening the decision panel */}
+            {it.notification_type === "teocoin_discount_pending" && (it.decision_id || (it as any).related_object_id) && (
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const id = (it.decision_id as number) ?? ((it as any).related_object_id as number) ?? null;
+                    if (id) setSelectedDecisionId(Number(id));
+                  }}
+                  className="inline-flex h-8 items-center rounded-md border px-2 text-xs hover:bg-accent"
+                >
+                  Apri decisione
+                </button>
+              </div>
+            )}
+          </div>
         ))}
       </div>
 
@@ -147,6 +165,20 @@ export default function Notifications() {
         onPageChange={toPage}
         className="pt-4"
       />
+
+      {selectedDecisionId != null && (
+        <div className="mt-4">
+          <TeacherDecisionPanel
+            decisionId={selectedDecisionId}
+            onClose={() => setSelectedDecisionId(null)}
+            onDecided={async () => {
+              setSelectedDecisionId(null);
+              notifyUpdated();
+              await load(page);
+            }}
+          />
+        </div>
+      )}
     </section>
   );
 }

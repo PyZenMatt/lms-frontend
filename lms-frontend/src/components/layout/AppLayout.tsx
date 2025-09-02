@@ -64,6 +64,8 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
     if (p.startsWith("/students")) return "students";
     if (p.startsWith("/analytics")) return "analytics";
     if (p.startsWith("/wallet")) return "wallet";
+  if (p.startsWith("/notifications")) return "notifications";
+  if (p.startsWith("/teacher/pending-discounts")) return "teacher-opportunities";
     return "dashboard";
   }, [path]);
 
@@ -127,6 +129,10 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                     return "/analytics";
                   case "wallet":
                     return "/wallet";
+                  case "notifications":
+                    return "/notifications";
+                  case "teacher-opportunities":
+                    return "/teacher/pending-discounts";
                   case "profile":
                     return "/profile";
                   default:

@@ -24,6 +24,19 @@ export default function PendingDiscountCard({
         </span>
       </div>
 
+      {/** show offered / final TEO and timestamp if available */}
+      <div className="mb-3 text-sm text-muted-foreground">
+        {snap.teacher_accepted_teo && (
+          <div>TEO offerti: <span className="font-mono">{snap.teacher_accepted_teo} TEO</span></div>
+        )}
+        {snap.final_teacher_teo && (
+          <div>TEO finale: <span className="font-mono">{snap.final_teacher_teo} TEO</span></div>
+        )}
+        {snap.created_at && (
+          <div className="text-xs text-muted-foreground">Creato: {new Date(snap.created_at).toLocaleString()}</div>
+        )}
+      </div>
+
       <div className="grid grid-cols-3 gap-3 text-sm">
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800 p-2">
           <div className="text-slate-500">Studente paga</div>

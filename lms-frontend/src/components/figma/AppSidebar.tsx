@@ -1,4 +1,5 @@
-import { Home, BookOpen, Users, Trophy, Palette, MessageCircle, User, UserCheck, GraduationCap, Wallet } from "lucide-react"
+import * as React from "react"
+import { Home, BookOpen, Users, Trophy, Palette, MessageCircle, User, UserCheck, GraduationCap, Wallet, Bell } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +16,7 @@ import { Badge } from "./ui/badge"
 import { useAuth } from "./AuthContext"
 import useDashboardStats from "@/hooks/useDashboardStats";
 import { getUserFromToken } from "@/lib/auth"
+import { getUnreadCount, getTeacherChoicesPendingCount } from "@/services/notifications";
 
 interface AppSidebarProps {
   currentPage: string
@@ -52,6 +54,56 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
   ]
 
   const menuItems = isTeacher ? teacherMenuItems : studentMenuItems
+
+  function UnreadBadge() {
+    const [count, setCount] = React.useState<number | null>(null)
+    React.useEffect(() => {
+      let mounted = true
+
+      async function fetchCount() {
+        try {
+          const c = await getUnreadCount()
+          if (mounted) setCount(c)
+        } catch {
+          if (mounted) setCount(null)
+        }
+      }
+
+      fetchCount()
+
+      const onUpdated = () => { fetchCount() }
+      window.addEventListener("notifications:updated", onUpdated as EventListener)
+      return () => { mounted = false; window.removeEventListener("notifications:updated", onUpdated as EventListener) }
+    }, [])
+
+    if (!count || count <= 0) return null
+    return <Badge variant="secondary" className="ml-auto bg-primary text-primary-foreground">{count}</Badge>
+  }
+
+  function OpportunityBadge() {
+    const [count, setCount] = React.useState<number | null>(null)
+    React.useEffect(() => {
+      let mounted = true
+
+      async function fetchCount() {
+        try {
+          const c = await getTeacherChoicesPendingCount()
+          if (mounted) setCount(c)
+        } catch {
+          if (mounted) setCount(null)
+        }
+      }
+
+      fetchCount()
+
+      const onUpdated = () => { fetchCount() }
+      window.addEventListener("notifications:updated", onUpdated as EventListener)
+      return () => { mounted = false; window.removeEventListener("notifications:updated", onUpdated as EventListener) }
+    }, [])
+
+    if (!count || count <= 0) return null
+    return <Badge variant="secondary" className="ml-auto bg-yellow-100 text-yellow-800">{count}</Badge>
+  }
 
   return (
     <Sidebar>
@@ -104,6 +156,28 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => onPageChange("notifications")}
+            >
+              <Bell className="size-4" />
+              <span>Notifiche</span>
+              <UnreadBadge />
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          {isTeacher && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => onPageChange("teacher-opportunities")}
+              >
+                <Trophy className="size-4" />
+                <span>Opportunity</span>
+                <OpportunityBadge />
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+
           <SidebarMenuItem>
             <SidebarMenuButton onClick={() => onPageChange("wallet")}>
               <Wallet className="size-4" />
