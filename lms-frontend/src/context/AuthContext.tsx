@@ -1,4 +1,5 @@
 // src/context/AuthContext.tsx
+/* eslint-disable react-refresh/only-export-components */
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { API } from "../lib/config";
@@ -33,7 +34,25 @@ type AuthCtx = {
 const Ctx = React.createContext<AuthCtx | undefined>(undefined);
 export const useAuth = () => {
   const ctx = useContext(Ctx);
-  if (!ctx) throw new Error("useAuth outside provider");
+  if (!ctx) {
+    // During HMR or early render the provider might not be mounted yet.
+    // Return a benign fallback to avoid throwing and crashing the whole app.
+    // Consumers should handle isAuthenticated/booting flags accordingly.
+    return {
+      booting: false,
+      isAuthenticated: false,
+      role: null,
+      isTeacher: false,
+      pendingTeoCount: 0,
+  setPendingTeoCount: (n: number) => { void n; },
+      login: async () => false,
+      logout: () => {},
+      refreshRole: async () => {},
+      redirectAfterAuth: () => {},
+      setSession: () => {},
+      postAuth: async () => {},
+    } as AuthCtx;
+  }
   return ctx;
 };
 
@@ -50,11 +69,13 @@ async function httpJSON<T>(
     },
     body: JSON.stringify(body ?? {}),
   });
-  let data: any = undefined;
+  let data: unknown = undefined;
   try {
     data = await res.json();
-  } catch {}
-  return { ok: res.ok, status: res.status, data };
+  } catch (e) {
+    console.debug('[Auth] httpJSON parse failed', e);
+  }
+  return { ok: res.ok, status: res.status, data: data as T | undefined };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -72,11 +93,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const params = new URLSearchParams(location.search);
       const redirectParam = params.get("redirect");
-      const fromState = (location.state as any)?.from?.pathname as string | undefined;
+      const fromState = (location.state as unknown as { from?: { pathname?: string } })?.from?.pathname;
       const effectiveRole = roleArg ?? role;
       const target = redirectParam || fromState || (effectiveRole === "admin" ? "/admin" : effectiveRole === "teacher" ? "/teacher" : "/dashboard");
       navigate(target, { replace: true });
-    } catch {
+    } catch (err) {
+      console.debug('[Auth] redirectAfterAuth failed', err);
       navigate("/dashboard", { replace: true });
     }
   }, [location.search, location.state, navigate, role]);
@@ -99,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const data = await res.json();
             r = (data?.role as Role) ?? r;
           }
-        } catch {}
+  } catch (e) { console.debug('[Auth] profile sync failed inner', e); }
       }
       // attempt to populate local UI-friendly user cache so legacy figma shim components
       // (which read `localStorage.artlearn_user`) display real data in the sidebar.
@@ -190,7 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         finalRole = (data?.role as Role) ?? finalRole;
       }
-  } catch (err) { console.debug("[Auth] refreshRole failed", err); }
+    } catch (err) { console.debug("[Auth] refreshRole failed", err); }
 
     try {
       await postAuth({ tokens: { access: r.data.access, refresh: r.data.refresh }, role: finalRole, unverified: false });

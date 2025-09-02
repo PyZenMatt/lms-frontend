@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
@@ -7,15 +7,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { 
   Wallet as WalletIcon, 
   Sparkles, 
-  ExternalLink, 
   Copy, 
-  RefreshCw,
   TrendingUp,
-  Award,
   Target
 } from "lucide-react"
 import { useAuth } from "./AuthContext"
 import { toast } from "sonner"
+import { getTransactions } from "../../services/wallet"
+import { api } from "../../lib/api"
+import { onchainMint, getTxStatus } from "../../features/wallet/walletApi"
+import type { WalletTransaction } from "../../services/wallet"
 
 export function Wallet() {
   const { user, connectWallet } = useAuth()
@@ -47,20 +48,243 @@ export function Wallet() {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
-  // Mock transaction history
-  const recentTransactions = [
-    { type: 'earned', amount: 5, description: 'Peer review completed', date: '2 hours ago' },
-    { type: 'earned', amount: 15, description: 'Assignment submitted', date: '1 day ago' },
-    { type: 'earned', amount: 3, description: 'Helpful feedback given', date: '2 days ago' },
-    { type: 'earned', amount: 10, description: 'Weekly streak bonus', date: '3 days ago' },
-    { type: 'earned', amount: 25, description: 'Community project participation', date: '1 week ago' },
-  ]
+  // Real transaction history (fetched)
+  const [recentTransactions, setRecentTransactions] = useState<WalletTransaction[]>([])
+  const [loadingTransactions, setLoadingTransactions] = useState<boolean>(true)
+  const [txPage, setTxPage] = useState<number>(1)
+  const [txCount, setTxCount] = useState<number | null>(null)
+  const [txHasMore, setTxHasMore] = useState<boolean>(false)
+  const [txNext, setTxNext] = useState<string | null>(null)
+  const [txPrevious, setTxPrevious] = useState<string | null>(null)
 
   const nextMilestones = [
     { name: 'Art Enthusiast', requirement: 300, reward: 50, current: user?.tokens || 0 },
     { name: 'Community Helper', requirement: 500, reward: 100, current: user?.tokens || 0 },
     { name: 'Master Critic', requirement: 1000, reward: 200, current: user?.tokens || 0 },
   ]
+
+  // helper to load a page; if append=true, append to existing list (for retro history)
+  // silent=true will avoid setting the global loading spinner (used by polling)
+  // stable key generator for transactions (fall back to composite fields when id missing)
+  const getTxKey = useCallback((tx: WalletTransaction) => {
+    const asRec = tx as unknown as Record<string, unknown>
+    const id = asRec.id ?? asRec.reference ?? asRec.tx_hash ?? asRec.hash
+    if (id !== undefined && id !== null) return String(id)
+    // fallback composite key
+    const t = String(asRec.type ?? '')
+    const d = String(asRec.created_at ?? '')
+    const a = String(asRec.amount_teo ?? asRec.amount ?? asRec.value ?? '')
+    return `${t}:${d}:${a}`
+  }, [])
+
+  // Merge and deduplicate transactions by stable key (preserves order: prev then next)
+  const mergeUniqueByKey = useCallback((prev: WalletTransaction[], next: WalletTransaction[]) => {
+    const seen = new Set<string>()
+    const out: WalletTransaction[] = []
+    for (const p of prev) {
+      const k = getTxKey(p)
+      if (!seen.has(k)) {
+        seen.add(k)
+        out.push(p)
+      }
+    }
+    for (const n of next) {
+      const k = getTxKey(n)
+      if (!seen.has(k)) {
+        seen.add(k)
+        out.push(n)
+      }
+    }
+    return out
+  }, [getTxKey])
+
+  const loadPage = useCallback(async (pageOrUrl: number | string, append = false, silent = false) => {
+    if (!silent) setLoadingTransactions(true)
+    try {
+      let res
+      if (typeof pageOrUrl === 'string') {
+        res = await getTransactions(1, 10, pageOrUrl)
+      } else {
+        res = await getTransactions(pageOrUrl, 10)
+      }
+  if (res.ok) {
+        const pageData = res.data
+        const results = pageData.results || []
+        // If server returns an empty page, avoid advancing pagination pointers
+        if (append && results.length === 0) {
+          // Nothing to append; keep current state
+          setLoadingTransactions(false)
+          return
+        }
+  setRecentTransactions((prev) => (append ? mergeUniqueByKey(prev, results) : results))
+        setTxCount(pageData.count ?? null)
+        setTxHasMore(Boolean(pageData.next))
+        setTxNext(typeof pageData.next === 'string' ? pageData.next : null)
+        setTxPrevious(typeof pageData.previous === 'string' ? pageData.previous : null)
+      } else {
+        if (!silent) toast("Failed to load transactions", { description: `Status ${res.status}` })
+      }
+    } catch (err) {
+      if (!silent) toast("Failed to load transactions", { description: String(err) })
+    } finally {
+      if (!silent) setLoadingTransactions(false)
+    }
+  }, [mergeUniqueByKey])
+
+  // Helper to read status from various shapes
+  const extractStatus = (obj: Record<string, unknown> | undefined): string => {
+    if (!obj) return ''
+    const candidates = [
+      'status', 'state', 'transaction_status', 'status_display', 'tx_status', 'processing_status',
+    ]
+    for (const k of candidates) {
+      const v = obj[k]
+      if (v && typeof v === 'string') return v
+    }
+    // nested shapes
+    const nested = (obj['data'] as Record<string, unknown> | undefined) ?? (obj['result'] as Record<string, unknown> | undefined) ?? (obj['payload'] as Record<string, unknown> | undefined)
+    if (nested) {
+      for (const k of ['status', 'state', 'status_display']) {
+        const v = nested[k]
+        if (v && typeof v === 'string') return v
+      }
+    }
+    return ''
+  }
+
+  useEffect(() => {
+    let mounted = true
+  // initial load replaces existing list
+  if (mounted) loadPage(txPage, false)
+    return () => { mounted = false }
+  }, [txPage, loadPage])
+
+  // Polling: query per-transaction status for any non-final transactions and update them individually.
+  useEffect(() => {
+    const FINAL = new Set(["completed", "failed", "succeeded", "ok"])
+    let timer: number | null = null
+
+    const nonFinal = recentTransactions.filter((t) => {
+      const s = String(extractStatus(t as Record<string, unknown>) ?? "").toLowerCase()
+      return s && !FINAL.has(s)
+    })
+
+    if (nonFinal.length === 0) return
+
+    // poll every 5s and check each non-final tx via getTxStatus
+  timer = window.setInterval(async () => {
+        for (const tx of nonFinal) {
+        const identifier = String((tx as Record<string, unknown>).reference ?? tx.id)
+        try {
+          const res = await getTxStatus(identifier)
+          if (res.ok && res.data) {
+            const remoteStatus = String(extractStatus(res.data as Record<string, unknown>) ?? '')
+            const localStatus = String(extractStatus(tx as Record<string, unknown>) ?? '')
+            if (remoteStatus && remoteStatus !== localStatus) {
+        setRecentTransactions((prev) => prev.map((p) => getTxKey(p as WalletTransaction) === getTxKey(tx as WalletTransaction) ? { ...p, status: remoteStatus } : p))
+            }
+          }
+        } catch (e) {
+          console.debug('[Wallet] getTxStatus failed', e)
+        }
+      }
+    }, 5000)
+
+    return () => { if (timer) window.clearInterval(timer) }
+  }, [recentTransactions, getTxKey])
+
+  // Periodic silent page refresh to pick up any backend-driven status changes
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      // silent refresh to avoid spinner
+      loadPage(txPage, false, true).catch(() => {})
+    }, 30000) // every 30s
+    return () => window.clearInterval(interval)
+  }, [txPage, loadPage])
+
+  // simple pagination handlers
+  // Prefer using server-provided next/previous links when available.
+  const handleNextPage = async () => {
+    if (txNext) {
+      // If backend provides a `next` URL, follow it instead of blindly incrementing the numeric page.
+      await loadPage(txNext, false)
+      return
+    }
+    if (txHasMore) {
+      setTxPage((p) => p + 1)
+      return
+    }
+    toast("No next page")
+  }
+
+  const handlePrevPage = async () => {
+    if (txPrevious) {
+      await loadPage(txPrevious, false)
+      return
+    }
+    setTxPage((p) => Math.max(1, p - 1))
+  }
+
+  const handleLoadPrevious = async () => {
+    if (!txPrevious) {
+      // fallback to numeric prev
+      handlePrevPage()
+      return
+    }
+    await loadPage(txPrevious, false)
+  }
+
+  const handleLoadMore = async () => {
+    if (!txHasMore) {
+      toast("No older transactions available")
+      return
+    }
+    // prefer using next link if available
+    if (txNext) {
+      await loadPage(txNext, true)
+      // we don't attempt to derive numeric page from the URL; leave txPage as-is
+      return
+    }
+    const nextPage = txPage + 1
+    await loadPage(nextPage, true)
+    setTxPage(nextPage)
+  }
+
+  const handleLoadAllHistory = async () => {
+    // fetch pages until no more next. Cap pages to avoid accidental huge downloads.
+    const MAX_PAGES = 50
+    let page = txPage
+    let pagesFetched = 0
+    while (pagesFetched < MAX_PAGES) {
+      if (!txHasMore && page !== txPage) break
+      const res = await getTransactions(page + 1, 50)
+      pagesFetched += 1
+      if (!res.ok) break
+      const results = res.data.results || []
+      // merge and deduplicate using the stable key generator
+      setRecentTransactions((prev) => mergeUniqueByKey(prev, results))
+      setTxCount(res.data.count ?? null)
+      const hasNext = Boolean(res.data.next)
+      setTxHasMore(hasNext)
+      page = page + 1
+      if (!hasNext) break
+    }
+    if (pagesFetched >= MAX_PAGES) toast("Reached maximum pages while loading history")
+  }
+
+  // derive filtered lists for UI: DB-backed vs on-chain/request-like
+  const dbTransactions = recentTransactions.filter((tx) => {
+    const obj = tx as Record<string, unknown>
+    // consider a tx 'DB' if it doesn't expose on-chain markers like status/tx_hash/explorer_url
+    if (obj['status'] || obj['tx_hash'] || obj['explorer_url']) return false
+    return true
+  })
+
+  const onchainTransactions = recentTransactions.filter((tx) => {
+    const obj = tx as Record<string, unknown>
+    const desc = String(obj.description ?? '').toLowerCase()
+    return Boolean(obj['status'] || obj['tx_hash'] || obj['explorer_url'] || desc.includes('burn requested') || desc.includes('mint requested'))
+  })
 
   return (
     <div className="space-y-6">
@@ -159,6 +383,7 @@ export function Wallet() {
       <Tabs defaultValue="activity" className="space-y-4">
         <TabsList>
           <TabsTrigger value="activity">Recent Activity</TabsTrigger>
+          <TabsTrigger value="requests">Requests</TabsTrigger>
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
           <TabsTrigger value="rewards">Reward System</TabsTrigger>
         </TabsList>
@@ -166,26 +391,148 @@ export function Wallet() {
         <TabsContent value="activity" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Transactions</CardTitle>
-              <CardDescription>Your latest token earnings</CardDescription>
+              <CardTitle>Recent Transactions (DB)</CardTitle>
+              <CardDescription>Local ledger transactions from the database</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {recentTransactions.map((transaction, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="size-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <TrendingUp className="size-4 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{transaction.description}</p>
-                      <p className="text-xs text-muted-foreground">{transaction.date}</p>
-                    </div>
+                {loadingTransactions ? (
+                  <div className="space-y-2">
+                    {[1,2,3].map((s) => (
+                      <div key={s} className="flex items-center justify-between p-3 border rounded-lg animate-pulse">
+                        <div className="flex items-center gap-3">
+                          <div className="size-8 bg-green-100 rounded-full" />
+                          <div className="w-40 h-4 bg-muted/50 rounded" />
+                        </div>
+                        <div className="w-12 h-4 bg-muted/50 rounded" />
+                      </div>
+                    ))}
                   </div>
-                  <Badge variant="secondary" className="bg-green-50 text-green-800">
-                    +{transaction.amount} ✨
-                  </Badge>
+                ) : recentTransactions.length === 0 ? (
+                  <div className="p-4 text-sm text-muted-foreground">No transactions yet.</div>
+                ) : (
+                  // show only DB-backed transactions in this tab
+                  dbTransactions.length === 0 ? (
+                    <div className="p-4 text-sm text-muted-foreground">No DB transactions found.</div>
+                  ) : (
+                    dbTransactions.map((tx) => {
+                      const dateLabel = tx.created_at ? new Date(tx.created_at).toLocaleString() : ''
+                      const amountVal = Number(tx.amount_teo ?? tx.amount ?? tx.value)
+
+                      const rawDesc = String(tx.description ?? tx.type ?? '')
+                      const rawDescLower = rawDesc.toLowerCase()
+                      const amountDisplay = Number.isFinite(amountVal) ? String(Math.abs(amountVal)) : 'Importo sconosciuto'
+                      let mainLabel = rawDesc
+                      if (rawDescLower.includes('burn requested')) {
+                        mainLabel = `Deposito ${amountDisplay}`
+                      } else if (rawDescLower.includes('mint requested')) {
+                        mainLabel = `Prelievo ${amountDisplay}`
+                      }
+
+                      const amt = Number(amountVal)
+                      const amountKnown = Number.isFinite(amt)
+                      const abs = amountKnown ? String(Math.abs(amt)) : 'Importo sconosciuto'
+                      let cls = 'bg-gray-50 text-gray-800'
+                      if (amountKnown) {
+                        if (amt > 0) cls = 'bg-green-50 text-green-800'
+                        else if (amt < 0) cls = 'bg-red-50 text-red-800'
+                      }
+                      const label = amountKnown ? `${amt > 0 ? '' : '-'}${abs} TEO` : abs
+
+                      return (
+                        <div key={getTxKey(tx)} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="size-8 bg-green-100 rounded-full flex items-center justify-center">
+                              <TrendingUp className="size-4 text-green-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">{mainLabel}</p>
+                              <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className={cls}>{label}</Badge>
+                          </div>
+                        </div>
+                      )
+          })
+        ))}
+                {/* Pagination */}
+                <div className="flex items-center justify-end gap-2 mt-3">
+                  <Button variant="ghost" size="sm" onClick={handleLoadPrevious} disabled={txPage <= 1 && !txPrevious}>Prev</Button>
+                  <div className="text-sm text-muted-foreground">Page {txPage}{txCount ? ` • ${txCount} total` : ''}</div>
+                  <Button variant="ghost" size="sm" onClick={handleNextPage} disabled={!txHasMore && !txNext}>Next</Button>
                 </div>
-              ))}
+                <div className="flex items-center justify-end gap-2 mt-2">
+                  <Button variant="outline" size="sm" onClick={handleLoadMore} disabled={!txHasMore || loadingTransactions}>Carica precedenti</Button>
+                  <Button variant="outline" size="sm" onClick={handleLoadAllHistory} disabled={loadingTransactions}>Carica tutta la storia</Button>
+                </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="requests" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>On‑chain Requests</CardTitle>
+              <CardDescription>On‑chain mint/burn requests and blockchain transactions</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {loadingTransactions ? (
+                <div className="p-4 text-sm text-muted-foreground">Loading requests…</div>
+              ) : (
+                onchainTransactions.length === 0 ? (
+                  <div className="p-4 text-sm text-muted-foreground">No on-chain requests found.</div>
+                ) : (
+                  onchainTransactions.map((tx) => {
+                    const dateLabel = tx.created_at ? new Date(tx.created_at).toLocaleString() : ''
+                    const amountVal = Number(tx.amount_teo ?? tx.amount ?? tx.value)
+                    const rawDesc = String(tx.description ?? tx.type ?? '')
+                    const rawDescLower = rawDesc.toLowerCase()
+                    const amountDisplay = Number.isFinite(amountVal) ? String(Math.abs(amountVal)) : 'Importo sconosciuto'
+                    let mainLabel = rawDesc
+                    if (rawDescLower.includes('burn requested')) mainLabel = `Deposito ${amountDisplay}`
+                    else if (rawDescLower.includes('mint requested')) mainLabel = `Prelievo ${amountDisplay}`
+
+                    const amt = Number(amountVal)
+                    const amountKnown = Number.isFinite(amt)
+                    const abs = amountKnown ? String(Math.abs(amt)) : 'Importo sconosciuto'
+                    let cls = 'bg-gray-50 text-gray-800'
+                    if (amountKnown) {
+                      if (amt > 0) cls = 'bg-green-50 text-green-800'
+                      else if (amt < 0) cls = 'bg-red-50 text-red-800'
+                    }
+                    const label = amountKnown ? `${amt > 0 ? '' : '-'}${abs} TEO` : abs
+
+                    const rawStatus = String(extractStatus(tx as Record<string, unknown>) ?? '')
+                    const s = rawStatus.toLowerCase()
+                    const statusLabel = s ? (s.charAt(0).toUpperCase() + s.slice(1)) : ''
+                    let statusCls = 'bg-gray-100 text-gray-800'
+                    if (['completed', 'succeeded', 'ok'].includes(s)) statusCls = 'bg-green-50 text-green-800'
+                    else if (['pending', 'processing', 'queued', 'waiting'].includes(s)) statusCls = 'bg-amber-50 text-amber-800'
+                    else if (['failed', 'error', 'rejected'].includes(s)) statusCls = 'bg-red-50 text-red-800'
+
+                    return (
+                      <div key={getTxKey(tx)} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="size-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <TrendingUp className="size-4 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{mainLabel}</p>
+                            <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className={cls}>{label}</Badge>
+                          {statusLabel ? (
+                            <Badge variant="outline" className={`${statusCls} text-xs px-2 py-0.5`}> {statusLabel} </Badge>
+                          ) : null}
+                        </div>
+                      </div>
+                    )
+                  })
+                )
+              )}
             </CardContent>
           </Card>
         </TabsContent>

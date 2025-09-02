@@ -117,17 +117,81 @@ export async function getWallet(): Promise<Result<WalletInfo>> {
 }
 
 /** GET movimenti wallet paginati */
-export async function getTransactions(page = 1, page_size = 20): Promise<Result<DrfPage<WalletTransaction>>> {
+export async function getTransactions(page = 1, page_size = 20, url?: string): Promise<Result<DrfPage<WalletTransaction>>> {
+  // If caller provides a full URL (next/previous), fetch that directly (converted to relative path)
+  if (typeof url === 'string' && url.length > 0) {
+    try {
+      let path = url
+      // If absolute URL, convert to path+search so api.joinUrl can normalize with BASE
+      if (/^https?:\/\//i.test(url)) {
+        try {
+          const u = new URL(url);
+          path = u.pathname + (u.search || '');
+        } catch {
+          // fallback: use as-is
+          path = url
+        }
+      }
+      const res = await api.get<unknown>(path);
+      if (!res.ok) return res as Err;
+      const payload = res.data as unknown;
+
+      // reuse existing normalization below by cloning local logic
+      const resultsField = (payload as Record<string, unknown>)?.results;
+      const transactionsField = (payload as Record<string, unknown>)?.transactions;
+      const dataField = (payload as Record<string, unknown>)?.data;
+
+      const arr: unknown[] =
+        Array.isArray(resultsField) ? (resultsField as unknown[]) :
+        Array.isArray(transactionsField) ? (transactionsField as unknown[]) :
+        Array.isArray(dataField) ? (dataField as unknown[]) :
+        Array.isArray(payload) ? (payload as unknown[]) : [];
+
+      const count = typeof (payload as Record<string, unknown>)?.count === 'number'
+        ? (payload as Record<string, unknown>).count as number
+        : (Array.isArray(arr) ? arr.length : 0);
+
+      const results: WalletTransaction[] = arr.map((r, i) => {
+        const obj = r as Record<string, unknown>;
+        const amountRaw = obj.amount_teo ?? obj.amount ?? obj.value ?? 0;
+        return {
+          id: obj.id ?? obj.tx_id ?? i,
+          type: (obj.type ?? obj.transaction_type ?? obj.kind ?? 'unknown') as string,
+          amount_teo: typeof amountRaw === 'number' ? amountRaw as number : Number(amountRaw ?? 0),
+          description: (obj.description ?? obj.note ?? obj.notes ?? obj.memo ?? null) as string | null,
+          created_at: (obj.created_at ?? obj.timestamp ?? new Date().toISOString()) as string,
+          reference: (obj.reference ?? obj.tx_hash ?? obj.hash ?? null) as string | null,
+          ...obj,
+        } as WalletTransaction;
+      });
+
+      const nextRaw = (payload as Record<string, unknown>)?.next;
+      const prevRaw = (payload as Record<string, unknown>)?.previous;
+      const next = typeof nextRaw === 'string' ? nextRaw : null;
+      const previous = typeof prevRaw === 'string' ? prevRaw : null;
+
+      return { ok: true, status: res.status, data: { count, next, previous, results } };
+    } catch (err) {
+      return { ok: false, status: 0, error: err } as Err;
+    }
+  }
+
+  // Prefer explicit API-prefixed TeoCoin transactions endpoint for DB-backed history
+  // Keep fallbacks for legacy v1 paths and other implementations
   const endpoints = [
-    "/v1/wallet/transactions/",
-    "/v1/teocoin/transactions/",
-    "/v1/teocoin/transactions/history/",
-    "/v1/services/earnings/history/",
-    "/v1/users/me/wallet/transactions/",
-    // API-prefixed variants
-    "/api/v1/wallet/transactions/",
+    // Preferred: server API that returns DB TeoCoin transactions
     "/api/v1/teocoin/transactions/",
     "/api/v1/teocoin/transactions/history/",
+    "/api/v1/wallet/transactions/",
+
+    // Legacy /v1 variants (kept for backward compatibility)
+    "/v1/teocoin/transactions/",
+    "/v1/teocoin/transactions/history/",
+    "/v1/wallet/transactions/",
+
+    // Other possible shapes used historically
+    "/v1/services/earnings/history/",
+    "/v1/users/me/wallet/transactions/",
     "/api/v1/services/earnings/history/",
     "/api/v1/users/me/wallet/transactions/",
   ];
