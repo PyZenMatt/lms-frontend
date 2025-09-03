@@ -1,0 +1,7 @@
+/* Compatibility: legacy import path. Prefer importing app.base.css + app.rest.css directly.
+  This file intentionally left minimal. */
+/* Tailwind v4 monolithic flow: import tailwindcss first, then theme tokens, then app overrides.
+  This aligns with @tailwindcss/postcss (v4) where @import "tailwindcss" composes layers internally. */
+@import "tailwindcss";
+@import "./theme/globals.css";
+/* Load app-level overrides last to avoid shadowing tokens/utilities */
