@@ -22,5 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+<<<<<<< HEAD
 lms-frontend/
 node_modules/
+=======
+>>>>>>> c36df749 (Frontend: aggiorna .gitignore e README)
