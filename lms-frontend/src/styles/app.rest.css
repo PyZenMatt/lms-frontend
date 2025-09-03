@@ -1,0 +1,26 @@
+/* app.rest.css - theme tokens + components/utilities */
+@import "./theme/globals.css";
+
+@tailwind components;
+@tailwind utilities;
+
+/* Applica sempre i token al documento */
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    background: var(--background-hsl);
+    color: var(--foreground-hsl);
+    @apply bg-background text-foreground;
+  }
+  * {
+    border-color: var(--border-hsl);
+    @apply border-border;
+  }
+
+  ::placeholder {
+    color: var(--muted-foreground-hsl);
+    @apply text-muted-foreground;
+  }
+}

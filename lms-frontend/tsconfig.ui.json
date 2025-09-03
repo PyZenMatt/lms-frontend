@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.app.json",
+  "include": [
+  "src/env.d.ts",
+  "src/components/ui/**/*",
+  "src/components/figma/ui/**/*",
+  "src/web3/**/*"
+  ]
+}
