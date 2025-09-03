@@ -3,12 +3,12 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { tokenStore } from './lib/tokenStore'
-import { USE_MSW } from './lib/env'
+import { tokenStore } from './lib/tokenStore.ts'
+import { USE_MSW } from './lib/env.ts'
 
 if (import.meta.env.DEV && USE_MSW) {
   ;(async () => {
-    const { worker } = await import('./mocks/browser')
+    const { worker } = await import('./mocks/browser.ts')
     await worker.start({ onUnhandledRequest: 'bypass' })
   })()
 }
