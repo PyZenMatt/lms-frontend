@@ -5,9 +5,20 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-print("BASE_DIR:", BASE_DIR)
 load_dotenv(BASE_DIR / ".env")
-print("Loaded STRIPE_SECRET_KEY:", os.getenv("STRIPE_SECRET_KEY"))
+
+# Avoid printing secrets to stdout in production. Use conditional debug logging.
+if os.getenv("ENVIRONMENT", "development") != "production":
+    try:
+        import logging
+
+        logging.getLogger(__name__).debug("BASE_DIR: %s", BASE_DIR)
+        logging.getLogger(__name__).debug(
+            "Loaded STRIPE_SECRET_KEY: %s", os.getenv("STRIPE_SECRET_KEY")
+        )
+    except Exception:
+        # best-effort logging; do not raise during settings import
+        pass
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
