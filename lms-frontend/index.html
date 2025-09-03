@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SchoolPlatform</title>
+
+  <!-- Load Inter early to avoid flash of fallback fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- 🌓 No-Flash Theme Boot: esegue PRIMA di React/CSS -->
+    <script>
+      (function () {
+        try {
+          // saved: 'dark' | 'light' | 'system' | null
+          var saved = localStorage.getItem("theme");
+          var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var useDark;
+          if (saved === 'dark') useDark = true;
+          else if (saved === 'light') useDark = false;
+          else useDark = prefersDark; // saved === 'system' or null -> follow OS
+          var root = document.documentElement; // <html>
+          if (useDark) root.classList.add("dark");
+          root.style.colorScheme = useDark ? "dark" : "light";
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body data-app="lms" class="min-h-dvh bg-background text-foreground antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
