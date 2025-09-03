@@ -1,0 +1,8 @@
+# Optional CI placeholder - Render can build directly from git
+stages:
+  - test
+
+lint:
+  stage: test
+  script:
+    - echo "No tests configured"
