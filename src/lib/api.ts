@@ -27,9 +27,10 @@ type RequestOptions = {
   [k: string]: unknown;
 };
 
-const DEFAULT_BASE = "http://127.0.0.1:8000/api";
-const RAW_BASE = (import.meta as any)?.env?.VITE_API_BASE_URL || DEFAULT_BASE;
-const BASE = normalizeBase(RAW_BASE);
+// base "origin" of the API (without trailing slash). Prefer Vite env, fall back to window.location.origin.
+// We pick Schema B: BASE = origin + '/api' and ensure we don't introduce a duplicate '/api'.
+const API_ORIGIN = ((import.meta as any)?.env?.VITE_API_BASE_URL ?? window.location.origin).replace(/\/+$/, "");
+const BASE = API_ORIGIN.endsWith("/api") ? API_ORIGIN : `${API_ORIGIN}/api`;
 
 // SimpleJWT refresh endpoint path (relative to BASE).
 // Backend exposes JWT refresh at /api/v1/token/refresh/ (see authentication.urls)
@@ -85,7 +86,7 @@ function clearTokens() {
 // ---- Helpers ----
 function normalizeBase(u: string): string {
   let s = String(u || "").trim();
-  if (!s) return DEFAULT_BASE;
+  if (!s) return API_ORIGIN;
   // remove trailing slash
   if (s.endsWith("/")) s = s.slice(0, -1);
   return s;
@@ -103,6 +104,24 @@ function joinUrl(base: string, path: string): string {
   }
   // Join and collapse accidental double slashes (except after protocol)
   return `${base}${p}`.replace(/([^:]\/)\/+/, "$1");
+}
+
+// Safer join that normalizes base and path and prevents duplicate /api segments.
+function joinApi(base: string, path: string): string {
+  const b = String(base || "").replace(/\/+$/, "");
+  const p = path.startsWith("/") ? path : `/${path}`;
+  if (b.endsWith("/api") && p.startsWith("/api/")) return b + p.slice(4);
+  return `${b}${p}`.replace(/([^:]\/)\/+/, "$1");
+}
+
+// Defensive JSON reader: ensures we fail early and include text when server returns HTML.
+async function readJson(res: Response) {
+  const ct = res.headers.get("content-type") || "";
+  if (!ct.includes("application/json")) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Non-JSON (${res.status}): ${txt.slice(0, 200)}`);
+  }
+  return res.json();
 }
 
 function buildQuery(params?: Record<string, any>): string {
@@ -147,7 +166,7 @@ async function refreshAccessToken(): Promise<boolean> {
   if (!refresh) return false;
   dispatchLoading(1);
   try {
-    const url = joinUrl(BASE, API_REFRESH_PATH);
+  const url = joinApi(BASE, API_REFRESH_PATH);
     const res = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -155,7 +174,7 @@ async function refreshAccessToken(): Promise<boolean> {
       body: JSON.stringify({ refresh }),
     });
     if (!res.ok) return false;
-    const data = await res.json().catch(() => ({}));
+  const data = await readJson(res).catch(() => ({}));
     const access = data?.access || data?.access_token;
     if (typeof access === "string" && access.length > 10) {
       saveTokens({ access, refresh });
@@ -206,7 +225,7 @@ async function coreRequest<T>(
   }
 
   // URL
-  const url = joinUrl(BASE, path) + buildQuery(options.params);
+  const url = joinApi(BASE, path) + buildQuery(options.params);
 
   // Fire request
   dispatchLoading(1);
