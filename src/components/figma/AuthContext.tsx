@@ -3,6 +3,7 @@
 // avoids duplicate contexts, runtime errors and TypeScript issues.
 import React from "react";
 import { AuthProvider as AppAuthProvider, useAuth as useAppAuth } from "@/context/AuthContext";
+import { API } from "@/lib/config";
 
 type FigmaUser = {
 	id: string;
@@ -70,7 +71,7 @@ export function useAuth(): FigmaAuthCtx {
 
 	const signup = async (name: string, email: string, password: string, role: "student" | "teacher") => {
 		// Try the real backend register endpoint first
-		const registerUrl = `${(import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api').replace(/\/+$/, '')}/v1/register/`;
+		const registerUrl = `${API.base.replace(/\/+$/, "")}/token/register/`;
 		try {
 			const res = await fetch(registerUrl, {
 				method: 'POST',

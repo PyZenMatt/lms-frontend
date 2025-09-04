@@ -1,8 +1,8 @@
 // src/lib/config.ts
-// Base URL resiliente: accetta sia .../api che .../api/v1 e garantisce che API.base finisca con /api/v1
-
-const RAW_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000/api";
-const BASE = RAW_BASE.replace(/\/+$/, ""); // senza trailing slash
+// Base URL resiliente: legge VITE_API_BASE_URL o fallback a window.location.origin in runtime.
+// Vogliamo uno schema coerente: API.base finirà con `/api/v1` (Schema B: BASE = origin + /api, V1 = BASE + /v1).
+const API_ORIGIN = ((import.meta as any).env?.VITE_API_BASE_URL ?? (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/+$/, "");
+const BASE = API_ORIGIN.endsWith("/api") ? API_ORIGIN : `${API_ORIGIN}/api`;
 const V1 = BASE.endsWith("/v1") ? BASE : `${BASE}/v1`;
 
 export const API = {

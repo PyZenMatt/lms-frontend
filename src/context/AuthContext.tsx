@@ -70,10 +70,17 @@ async function httpJSON<T>(
     body: JSON.stringify(body ?? {}),
   });
   let data: unknown = undefined;
+  const ct = res.headers.get("content-type") || "";
   try {
+    if (!ct.includes("application/json")) {
+      const txt = await res.text().catch(() => "");
+      console.debug('[Auth] httpJSON non-json response', { status: res.status, text: txt.slice(0,200) });
+      return { ok: res.ok, status: res.status, data: undefined };
+    }
     data = await res.json();
   } catch (e) {
-    console.debug('[Auth] httpJSON parse failed', e);
+    const txt = await res.text().catch(() => "");
+    console.debug('[Auth] httpJSON parse failed', e, txt.slice(0,200));
   }
   return { ok: res.ok, status: res.status, data: data as T | undefined };
 }
