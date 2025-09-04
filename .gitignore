@@ -1,24 +1,96 @@
+# Node modules
+node_modules/
+
+# Build output
+/dist/
+/build/
+/public/build/
+/.vite/
+/.turbo/
+
+# Local env files (should not be committed)
+.env
+.env.*
+.env.local
+.env.*.local
+.envrc
+.npmrc
+
 # Logs
-logs
-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
+*.log
 
-node_modules
-dist
-dist-ssr
-*.local
+# Test and coverage
+coverage/
+test-results/
+tests/
+playwright-results/
+playwright-report/
+playwright-report-*/
+.playwright/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Playwright artifacts
+*.zip
+*.trace
+trace.zip
+
+# Playwright config and result images (optional)
+playwright.config.ts
+playwright-*.png
+
+# Cache, lock caches
+.cache/
+.vscode/.history/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# OS files
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+
+# IDE/project files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+
+# Misc
+dist-*/
+
+# Secrets and keys
+*.pem
+*.key
+*.p12
+*.jks
+*.crt
+*.asc
+.private
+*.env.*
+.aws/
+
+# Documentation and audits (non-production docs)
+# Keep README.md if you want public repo docs; ignore audit and internal docs
+FRONTEND_SUMMARY.md
+README_FE_CONVENTIONS.md
+THEME-VISIBILITY-AUDIT.md
+TOKEN_AUDIT.md
+src/pages/FRONTEND_SUMMARY.md
+docs/
+
+# Keep package-lock.json / yarn.lock committed for reproducible installs
+# (do not ignore lockfiles unless you have a reason)
+
+# If the repository uses a monorepo layout or split dirs, ignore generated split folders if needed
+split-backend/
+split-frontend/
+
+# End of file
