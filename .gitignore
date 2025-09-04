@@ -93,4 +93,18 @@ docs/
 split-backend/
 split-frontend/
 
+#Modifiche Impostazioni Locali:
+package-lock.json
+main.tsx
+AuthForms.tsx
+api.ts
+config.ts
+
 # End of file
+
+# Local developer files to keep out of commits
+package-lock.json
+src/components/figma/AuthForms.tsx
+src/lib/api.ts
+src/lib/config.ts
+src/main.tsx
