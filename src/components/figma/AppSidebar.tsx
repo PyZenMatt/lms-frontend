@@ -33,6 +33,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
   const tokenFallback = tokenUser ? (tokenUser.username ?? ((tokenUser.first_name || tokenUser.last_name) ? `${tokenUser.first_name ?? ""} ${tokenUser.last_name ?? ""}`.trim() : tokenUser.email)) : undefined;
   const tooltipText = user ? (user.name ?? user.email ?? String(user.id ?? "")) : tokenFallback;
   const displayName = tooltipText && tooltipText.length > 20 ? tooltipText.slice(0, 20) + "…" : tooltipText ?? "";
+  const emailDisplay = user?.email ?? tokenUser?.email ?? "";
 
   const studentMenuItems = [
     { title: "Dashboard", page: "dashboard", icon: Home },
@@ -193,9 +194,14 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
               tooltip={tooltipText}
             >
               <User className="size-4" />
-              {displayName ? (
-                <span className="truncate max-w-[9rem]" title={tooltipText}>{displayName}</span>
-              ) : null}
+              <span className="ml-2 overflow-hidden">
+                <span className="text-sm font-medium leading-none truncate max-w-[9rem] block" title={tooltipText}>
+                  {user?.name ?? displayName}
+                </span>
+                <span className="text-xs leading-none text-muted-foreground truncate max-w-[9rem] block">
+                  {emailDisplay}
+                </span>
+              </span>
               <Badge variant="outline" className="ml-auto capitalize text-xs">
                 {user?.role}
               </Badge>

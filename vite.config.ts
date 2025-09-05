@@ -18,4 +18,16 @@ export default defineConfig({
   "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
   },
+  server: {
+    // Proxy API calls to the backend during local development so
+    // frontend can call /api/v1/... without needing VITE_API_BASE_URL.
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+        // preserve path; Vite will forward /api/... to backend
+      },
+    },
+  },
 })

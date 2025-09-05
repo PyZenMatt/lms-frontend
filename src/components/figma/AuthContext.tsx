@@ -4,6 +4,8 @@
 import React from "react";
 import { AuthProvider as AppAuthProvider, useAuth as useAppAuth } from "@/context/AuthContext";
 import { API } from "@/lib/config";
+import { getProfile } from "@/services/profile";
+import { getDbWallet } from "@/services/wallet";
 
 type FigmaUser = {
 	id: string;
@@ -43,13 +45,94 @@ export function useAuth(): FigmaAuthCtx {
 	});
 
 	React.useEffect(() => {
-		try {
-			const s = localStorage.getItem("artlearn_user");
-			setUser(s ? (JSON.parse(s) as FigmaUser) : null);
-		} catch {
-			setUser(null);
-		}
-		// keep in sync when central auth changes
+		let mounted = true;
+
+		const syncLocalUser = async () => {
+			try {
+				const s = localStorage.getItem("artlearn_user");
+				if (s) {
+					if (mounted) setUser(JSON.parse(s) as FigmaUser);
+					return;
+				}
+			} catch (e) {
+				// fallthrough
+			}
+
+			// If central auth reports authenticated, try to fetch profile+wallet
+			if (app.isAuthenticated) {
+				try {
+					const profile = await getProfile();
+					if (profile) {
+						const walletRes = await getDbWallet();
+						const tokensCount = (walletRes && (walletRes as any).ok) ? ((walletRes as any).data.balance_teo ?? 0) : 0;
+						const profileRec = profile as Record<string, unknown>;
+						const artUser: FigmaUser = {
+							id: profileRec?.id ? String(profileRec.id) : (profile.username ?? profile.email ?? "") as string,
+							name: (profile.username ?? ((`${profile.first_name ?? ""} ${profile.last_name ?? ""}`).trim() || profile.email || "User")) as string,
+							email: profile.email ?? "",
+							role: (profile.role ?? "student") as "student" | "teacher",
+							tokens: Number.isFinite(Number(tokensCount)) ? Number(tokensCount) : 0,
+							avatar: profile.avatar ?? undefined,
+						};
+						try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (err) { console.debug('[FigmaShim] save backend user failed', err); }
+						if (mounted) setUser(artUser);
+						return;
+					}
+				} catch (err) { console.debug('[FigmaShim] sync profile failed', err); }
+			} else {
+				// If central auth is not authenticated, but tokens exist in localStorage
+				// (maybe stored by other parts of the app), try to bootstrap the central
+				// auth by calling app.setSession so the provider becomes authenticated
+				// and the normal profile-sync path runs.
+				try {
+					// Try several storage keys: auth_tokens (JSON), legacy access/refresh, simple access
+					const raw = localStorage.getItem("auth_tokens");
+					let tokens: any = null;
+					if (raw) {
+						try { tokens = JSON.parse(raw); } catch {}
+					}
+					if (!tokens) {
+						const access = localStorage.getItem("access_token") || localStorage.getItem("access");
+						const refresh = localStorage.getItem("refresh_token");
+						if (access || refresh) tokens = { access: access ?? null, refresh: refresh ?? null };
+					}
+					if (tokens && (tokens.access || tokens.refresh)) {
+						if (typeof app.setSession === "function") {
+							try { app.setSession({ access: tokens.access ?? null, refresh: tokens.refresh ?? null }, undefined); } catch (err) { console.debug('[FigmaShim] app.setSession failed', err); }
+						}
+						// give provider a moment to update then re-run sync
+						await new Promise((r) => setTimeout(r, 50));
+						if (mounted) {
+							// re-run sync logic once central auth updated
+							try {
+								const profile = await getProfile();
+								if (profile) {
+									const walletRes = await getDbWallet();
+									const tokensCount = (walletRes && (walletRes as any).ok) ? ((walletRes as any).data.balance_teo ?? 0) : 0;
+									const profileRec = profile as Record<string, unknown>;
+									const artUser: FigmaUser = {
+										id: profileRec?.id ? String(profileRec.id) : (profile.username ?? profile.email ?? "") as string,
+										name: (profile.username ?? ((`${profile.first_name ?? ""} ${profile.last_name ?? ""}`).trim() || profile.email || "User")) as string,
+										email: profile.email ?? "",
+										role: (profile.role ?? "student") as "student" | "teacher",
+										tokens: Number.isFinite(Number(tokensCount)) ? Number(tokensCount) : 0,
+										avatar: profile.avatar ?? undefined,
+									};
+									try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (err) { console.debug('[FigmaShim] save backend user failed', err); }
+									if (mounted) setUser(artUser);
+									return;
+								}
+							} catch (err) { console.debug('[FigmaShim] sync profile after setSession failed', err); }
+						}
+					}
+				} catch (err) { console.debug('[FigmaShim] token bootstrap failed', err); }
+			}
+
+			if (mounted) setUser(null);
+		};
+
+		syncLocalUser();
+		return () => { mounted = false; };
 	}, [app.isAuthenticated]);
 
 	const login = async (email: string, password: string) => {

@@ -12,7 +12,10 @@ import {
   type Tokens,
 } from "../lib/auth";
 import { getProfile } from "../services/profile";
-import { getDbWallet } from "../services/wallet";
+import { getDbWallet, getWallet } from "../services/wallet";
+import { getUserFromToken } from "../lib/auth";
+import type { Result } from "../services/wallet";
+type WalletResult = Result<unknown>;
 
 type Role = "student" | "teacher" | "admin" | null;
 
@@ -133,11 +136,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // attempt to populate local UI-friendly user cache so legacy figma shim components
       // (which read `localStorage.artlearn_user`) display real data in the sidebar.
       try {
-        const profile = await getProfile();
+      const profile = await getProfile();
+      // Prefer the DB-backed wallet, but fall back to legacy getWallet() if the DB endpoint fails
+      let walletRes = await getDbWallet().catch(() => ({ ok: false } as WalletResult));
+      if (!walletRes || !walletRes.ok) {
+        console.debug('[Auth] getDbWallet failed or returned non-ok, attempting legacy getWallet fallback', walletRes);
+        try {
+          const legacy = await getWallet().catch(() => ({ ok: false } as WalletResult));
+          if (legacy && legacy.ok) {
+            console.debug('[Auth] legacy getWallet succeeded and will be used as fallback', legacy);
+            walletRes = legacy;
+          } else {
+            console.debug('[Auth] legacy getWallet fallback also failed', legacy);
+          }
+        } catch (e) {
+          console.debug('[Auth] legacy getWallet threw', e);
+        }
+      }
+      const tokensCount = walletRes && walletRes.ok ? ((walletRes.data as Record<string, unknown>)?.balance_teo ?? 0) : 0;
         if (profile) {
-          const walletRes = await getDbWallet();
-          const tokensCount = walletRes.ok ? (walletRes.data.balance_teo ?? 0) : 0;
           const profileRec = profile as Record<string, unknown>;
+          const walletAddress = (walletRes && walletRes.ok && walletRes.data && typeof walletRes.data === 'object' && 'address' in (walletRes.data as Record<string, unknown>)) ? (walletRes.data as Record<string, unknown>).address as string | null : null;
           const artUser = {
             id: profileRec?.id ? String(profileRec.id) : (profile.username ?? profile.email ?? ""),
             name: (profile.username ?? ((`${profile.first_name ?? ""} ${profile.last_name ?? ""}`).trim() || profile.email || "User")),
@@ -145,9 +164,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: profile.role ?? r ?? "student",
             tokens: Number.isFinite(Number(tokensCount)) ? Number(tokensCount) : 0,
             avatar: profile.avatar ?? null,
-            walletAddress: profile.wallet_address ?? (walletRes.ok ? walletRes.data.address ?? null : null),
+            walletAddress,
           };
           try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save artlearn_user failed', e); }
+        } else {
+          // fallback: use token info and wallet result so UI isn't empty
+          const tokenUser = getUserFromToken();
+          const walletAddress = walletRes && walletRes.ok ? ((walletRes as any).data?.address ?? null) : null;
+          const artUser = {
+            id: tokenUser?.username ?? tokenUser?.email ?? "",
+            name: (tokenUser?.username) ?? (((tokenUser?.first_name ?? "") + " " + (tokenUser?.last_name ?? "")).trim()) ?? tokenUser?.email ?? "",
+            email: tokenUser?.email ?? "",
+            role: r ?? "student",
+            tokens: Number.isFinite(Number(tokensCount)) ? Number(tokensCount) : 0,
+            avatar: null,
+            walletAddress,
+          };
+          try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save artlearn_user fallback failed', e); }
         }
   } catch (err) { console.debug('[Auth] profile sync failed', err); }
       setAuth({ booting: false, isAuthenticated: true, role: r });
@@ -171,10 +204,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // populate artlearn_user so legacy UI components (figma shim) pick up real data
     try {
       const profile = await getProfile();
+      // Prefer DB-backed wallet, fall back to legacy getWallet() if needed
+      let walletRes = await getDbWallet().catch(() => ({ ok: false } as WalletResult));
+      if (!walletRes || !walletRes.ok) {
+        console.debug('[Auth] postAuth getDbWallet failed or returned non-ok, attempting legacy getWallet fallback', walletRes);
+        try {
+          const legacy = await getWallet().catch(() => ({ ok: false } as WalletResult));
+          if (legacy && legacy.ok) {
+            console.debug('[Auth] postAuth legacy getWallet succeeded and will be used as fallback', legacy);
+            walletRes = legacy;
+          } else {
+            console.debug('[Auth] postAuth legacy getWallet fallback also failed', legacy);
+          }
+        } catch (e) {
+          console.debug('[Auth] postAuth legacy getWallet threw', e);
+        }
+      }
+      const tokensCount = walletRes && walletRes.ok ? ((walletRes.data as Record<string, unknown>)?.balance_teo ?? 0) : 0;
       if (profile) {
-        const walletRes = await getDbWallet();
-        const tokensCount = walletRes.ok ? (walletRes.data.balance_teo ?? 0) : 0;
         const profileRec = profile as Record<string, unknown>;
+        const walletAddress = walletRes && walletRes.ok ? ((walletRes as any).data?.address ?? null) : null;
         const artUser = {
           id: profileRec?.id ? String(profileRec.id) : (profile.username ?? profile.email ?? ""),
           name: (profile.username ?? ((`${profile.first_name ?? ""} ${profile.last_name ?? ""}`).trim() || profile.email || "User")),
@@ -182,9 +231,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role: profile.role ?? finalRole ?? "student",
           tokens: Number.isFinite(Number(tokensCount)) ? Number(tokensCount) : 0,
           avatar: profile.avatar ?? null,
-          walletAddress: profile.wallet_address ?? (walletRes.ok ? walletRes.data.address ?? null : null),
+          walletAddress,
         };
         try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save artlearn_user failed', e); }
+      } else {
+        const tokenUser = getUserFromToken();
+        const walletAddress = walletRes && walletRes.ok ? ((walletRes as any).data?.address ?? null) : null;
+        const artUser = {
+          id: tokenUser?.username ?? tokenUser?.email ?? "",
+          name: (tokenUser?.username) ?? (((tokenUser?.first_name ?? "") + " " + (tokenUser?.last_name ?? "")).trim()) ?? tokenUser?.email ?? "",
+          email: tokenUser?.email ?? "",
+          role: finalRole ?? "student",
+          tokens: Number.isFinite(Number(tokensCount)) ? Number(tokensCount) : 0,
+          avatar: null,
+          walletAddress,
+        };
+        try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save artlearn_user fallback failed', e); }
       }
   } catch (err) { console.debug('[Auth] postAuth profile sync failed', err); }
     if (unverified) {
@@ -263,8 +325,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated,
       role,
       isTeacher: role === "teacher" || role === "admin",
-      pendingTeoCount: 0,
-      setPendingTeoCount: (_n: number) => setPendingTeoCount(_n),
+  // defaults to satisfy AuthCtx - real values provided in fullValue below
+  pendingTeoCount: 0,
+  setPendingTeoCount: (n: number) => { void n; },
   login,
   logout,
   refreshRole,
