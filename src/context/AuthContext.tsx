@@ -9,6 +9,7 @@ import {
   clearTokens,
   getRoleFromToken,
   getAccessToken,
+  isAccessTokenExpired,
   type Tokens,
 } from "../lib/auth";
 import { getProfile } from "../services/profile";
@@ -117,10 +118,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       const tokens = loadTokens();
+      // If no tokens at all, we are anonymous
       if (!tokens) {
         setAuth({ booting: false, isAuthenticated: false, role: null });
         return;
       }
+      // If access token is missing or expired, avoid treating user as authenticated
+      const access = getAccessToken();
+      if (!access || isAccessTokenExpired(access)) {
+        // Clear any stale tokens and bail out as anonymous. Do not attempt silent refresh here.
+        try { clearTokens(); } catch (e) { console.debug('[Auth] boot clearTokens failed', e); }
+        setAuth({ booting: false, isAuthenticated: false, role: null });
+        return;
+      }
+
       let r = getRoleFromToken();
       if (!r) {
         try {
@@ -183,7 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save artlearn_user fallback failed', e); }
         }
   } catch (err) { console.debug('[Auth] profile sync failed', err); }
-      setAuth({ booting: false, isAuthenticated: true, role: r });
+  setAuth({ booting: false, isAuthenticated: true, role: r });
     })();
   }, []);
 
@@ -290,9 +301,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [postAuth]);
 
   const logout = React.useCallback(() => {
-    clearTokens();
+    try {
+      // Clear tokens in both API client layer and auth helpers
+      clearTokens();
+    } catch (e) {
+      console.debug('[Auth] logout: clearTokens failed', e);
+    }
+    try {
+      // Remove legacy UI cache
+      localStorage.removeItem("artlearn_user");
+    } catch (e) {
+      console.debug('[Auth] logout: remove artlearn_user failed', e);
+    }
     setAuth({ booting: false, isAuthenticated: false, role: null });
-  }, []);
+    // Remove any global Authorization defaults that might be held elsewhere by older clients
+  try { window.dispatchEvent(new CustomEvent('auth:logout')); } catch (e) { console.debug('[Auth] logout dispatch failed', e); }
+    // Navigate to login and do a hard reload to ensure no in-memory schedulers retain tokens
+    try {
+      navigate('/login', { replace: true });
+    } catch {}
+    try { window.location.reload(); } catch (e) { console.debug('[Auth] reload failed', e); }
+  }, [navigate]);
 
   const refreshRole = React.useCallback(async () => {
     const token = getAccessToken();

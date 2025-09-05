@@ -207,7 +207,18 @@ async function coreRequest<T>(
 
   // Auth header
   const { access } = loadTokens();
-  if (!options.noAuth && access) {
+  // Public allowlist: if the path matches a known public endpoint, avoid attaching Authorization
+  const PUBLIC_ALLOWLIST = [
+    "/v1/register/",
+    "/v1/token/",
+    "/v1/token/refresh/",
+    "/v1/password/",
+    "/v1/password/reset/",
+    "/v1/password/confirm/",
+  ];
+  const pathIsPublic = typeof path === "string" && PUBLIC_ALLOWLIST.some((p) => path.startsWith(p) || path === p);
+  const skipAuth = Boolean(options.noAuth) || pathIsPublic;
+  if (!skipAuth && access) {
     headers["authorization"] = `Bearer ${access}`;
   }
 

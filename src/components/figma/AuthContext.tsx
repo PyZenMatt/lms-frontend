@@ -156,9 +156,11 @@ export function useAuth(): FigmaAuthCtx {
 	const signup = async (name: string, email: string, password: string, role: "student" | "teacher") => {
 			// Try the real backend register endpoint first using centralized API client
 			try {
-				const resp = await api.post('/v1/register/', { username: name, email, password, role });
+				// Ensure we do not attach Authorization for public endpoints (avoid sending expired tokens)
+				const resp = await api.post('/v1/register/', { username: name, email, password, role }, { noAuth: true });
 				console.debug('[FigmaShim] register response', resp.status, resp.data ?? resp.error);
 				if (resp.ok) {
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime response from API, kept permissive
 					const data: any = resp.data;
 					// backend created user: try to login to obtain tokens
 					const loginOk = await app.login(email, password);
@@ -208,9 +210,11 @@ export function useAuth(): FigmaAuthCtx {
 	};
 
 	const connectWallet = async () => {
-		if (typeof window !== "undefined" && (window as any).ethereum) {
-			try {
-				const eth = (window as any).ethereum as { request: (opts: { method: string }) => Promise<string[]> } | undefined;
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				if (typeof window !== "undefined" && (window as any).ethereum) {
+				try {
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					const eth = (window as any).ethereum as { request: (opts: { method: string }) => Promise<string[]> } | undefined;
 				if (!eth) return false;
 				const accounts = await eth.request({ method: "eth_requestAccounts" });
 				if (accounts && accounts.length > 0 && user) {

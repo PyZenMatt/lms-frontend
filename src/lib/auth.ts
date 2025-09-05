@@ -79,3 +79,19 @@ export function getUserFromToken(): JwtUser | null {
     return null;
   }
 }
+
+// Check token expiry (JWT `exp` claim). Returns true if token is expired or
+// missing. We include a small leeway (in seconds) to avoid borderline cases.
+export function isAccessTokenExpired(token?: string | null, leewaySeconds = 30): boolean {
+  const raw = token ?? getAccessToken();
+  if (!raw) return true;
+  try {
+    const payload = JSON.parse(atob(String(raw).split(".")[1] || ""));
+    const exp = payload?.exp;
+    if (typeof exp !== "number") return true;
+    const now = Math.floor(Date.now() / 1000);
+    return exp <= (now + leewaySeconds) ? true : false;
+  } catch {
+    return true;
+  }
+}

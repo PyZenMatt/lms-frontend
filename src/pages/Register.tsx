@@ -23,7 +23,8 @@ export default function Register() {
       setMsg("Controlla i campi: email valida, password ≥ 6 caratteri, username ≥ 3.");
       return;
     }
-  const res = await api.post("/v1/register/", { username, email, password, role });
+  // Public endpoint - avoid attaching Authorization header (noAuth:true)
+  const res = await api.post("/v1/register/", { username, email, password, role }, { noAuth: true });
     if (!res.ok) {
       const detail = (res.data as any)?.detail || JSON.stringify(res.data);
       setMsg(`Errore: ${detail || res.status}`);
