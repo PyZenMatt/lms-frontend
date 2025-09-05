@@ -4,6 +4,7 @@
 import React from "react";
 import { AuthProvider as AppAuthProvider, useAuth as useAppAuth } from "@/context/AuthContext";
 import { API } from "@/lib/config";
+import { api } from "@/lib/api";
 import { getProfile } from "@/services/profile";
 import { getDbWallet } from "@/services/wallet";
 
@@ -153,39 +154,32 @@ export function useAuth(): FigmaAuthCtx {
 	};
 
 	const signup = async (name: string, email: string, password: string, role: "student" | "teacher") => {
-		// Try the real backend register endpoint first
-		const registerUrl = `${API.base.replace(/\/+$/, "")}/token/register/`;
-		try {
-			const res = await fetch(registerUrl, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ username: name, email, password, role }),
-			});
-			const text = await res.text();
-			let data: any = undefined;
-			try { data = text ? JSON.parse(text) : undefined; } catch (e) { data = text; }
-			console.debug('[FigmaShim] register response', res.status, data);
-			if (res.ok) {
-				
-				// backend created user: try to login to obtain tokens
-				const loginOk = await app.login(email, password);
-				if (loginOk) {
-					// app.login -> postAuth will handle redirect
-					try { localStorage.setItem('artlearn_user', JSON.stringify({ id: data.user.id, name: data.user.username, email: data.user.email, role: data.user.role, tokens: role === 'teacher' ? 500 : 50 })); } catch (err) { console.debug('[FigmaShim] save backend user failed', err); }
-					return true;
-				}
-				// login failed: possibly unverified email; redirect to verify-email/sent
-				if (typeof app.postAuth === 'function') {
-					try {
-						await app.postAuth({ role: data.user.role, unverified: true });
+			// Try the real backend register endpoint first using centralized API client
+			try {
+				const resp = await api.post('/v1/register/', { username: name, email, password, role });
+				console.debug('[FigmaShim] register response', resp.status, resp.data ?? resp.error);
+				if (resp.ok) {
+					const data: any = resp.data;
+					// backend created user: try to login to obtain tokens
+					const loginOk = await app.login(email, password);
+					if (loginOk) {
+						try {
+							localStorage.setItem('artlearn_user', JSON.stringify({ id: data.user.id, name: data.user.username, email: data.user.email, role: data.user.role, tokens: role === 'teacher' ? 500 : 50 }));
+						} catch (err) { console.debug('[FigmaShim] save backend user failed', err); }
 						return true;
-					} catch (err) { console.debug('[FigmaShim] postAuth(unverified) failed', err); }
+					}
+					// login failed: possibly unverified email; redirect to verify-email/sent
+					if (typeof app.postAuth === 'function') {
+						try {
+							await app.postAuth({ role: data.user.role, unverified: true });
+							return true;
+						} catch (err) { console.debug('[FigmaShim] postAuth(unverified) failed', err); }
+					}
+					return false;
 				}
-				return false;
+			} catch (err) {
+				console.debug('[FigmaShim] register call failed via api client, falling back to demo shim', err);
 			}
-		} catch (err) {
-			console.debug('[FigmaShim] register call failed, falling back to demo shim', err);
-		}
 
 		// Fallback: Lightweight demo signup (offline/demo mode)
 		const newUser: FigmaUser = {
