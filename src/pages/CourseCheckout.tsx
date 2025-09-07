@@ -145,6 +145,18 @@ export default function CourseCheckout() {
       setError(`Creazione pagamento fallita (HTTP ${res.status})`)
       return
     }
+    // If backend could not apply TEO discount due to insufficient DB balance,
+    // surface a non-blocking warning so the user understands why discount wasn't applied.
+    try {
+      const meta = (res as any).metadata ?? (res as any).raw?.metadata
+      if (meta && meta.teo_balance_insufficient === "True") {
+        setError(
+          "Impossibile applicare lo sconto TEO (saldo TEO insufficiente lato server). Puoi comunque procedere con il pagamento con carta."
+        )
+      }
+    } catch {
+      // ignore malformed metadata
+    }
     // Caso Checkout Session → redirect
     if (res.checkout_url) {
       window.location.href = res.checkout_url
