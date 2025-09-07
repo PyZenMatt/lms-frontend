@@ -9,6 +9,7 @@ import {
   clearTokens,
   getRoleFromToken,
   getAccessToken,
+  getRefreshToken,
   isAccessTokenExpired,
   type Tokens,
 } from "../lib/auth";
@@ -317,26 +318,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [postAuth]);
 
   const logout = React.useCallback(() => {
-    try {
-      // Clear tokens in both API client layer and auth helpers
-      clearTokens();
-    } catch (e) {
-      console.debug('[Auth] logout: clearTokens failed', e);
-    }
-    try {
-      // Remove legacy UI cache
-      localStorage.removeItem("artlearn_user");
-    } catch (e) {
-      console.debug('[Auth] logout: remove artlearn_user failed', e);
-    }
-    setAuth({ booting: false, isAuthenticated: false, role: null });
-    // Remove any global Authorization defaults that might be held elsewhere by older clients
-  try { window.dispatchEvent(new CustomEvent('auth:logout')); } catch (e) { console.debug('[Auth] logout dispatch failed', e); }
-    // Navigate to login and do a hard reload to ensure no in-memory schedulers retain tokens
-    try {
-      navigate('/login', { replace: true });
-    } catch {}
-    try { window.location.reload(); } catch (e) { console.debug('[Auth] reload failed', e); }
+    // Fire-and-forget async logout to backend so server-side session cookie is cleared
+    (async () => {
+      try {
+        const refresh = getRefreshToken();
+        try {
+          // Attempt to notify backend so it can delete session cookies and blacklist refresh token
+          await fetch(API.logout, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(refresh ? { refresh } : {}),
+          });
+        } catch (e) {
+          // swallow network errors but log for debugging
+          console.debug('[Auth] logout: backend call failed', e);
+        }
+      } catch (e) {
+        console.debug('[Auth] logout: prepare backend logout failed', e);
+      } finally {
+        try {
+          // Clear tokens in both API client layer and auth helpers
+          clearTokens();
+        } catch (e) {
+          console.debug('[Auth] logout: clearTokens failed', e);
+        }
+        try {
+          // Remove legacy UI cache
+          localStorage.removeItem("artlearn_user");
+        } catch (e) {
+          console.debug('[Auth] logout: remove artlearn_user failed', e);
+        }
+        setAuth({ booting: false, isAuthenticated: false, role: null });
+        try { window.dispatchEvent(new CustomEvent('auth:logout')); } catch (e) { console.debug('[Auth] logout dispatch failed', e); }
+        // Navigate to login and do a hard reload to ensure no in-memory schedulers retain tokens
+        try { navigate('/login', { replace: true }); } catch {}
+        try { window.location.reload(); } catch (e) { console.debug('[Auth] reload failed', e); }
+      }
+    })();
   }, [navigate]);
 
   const refreshRole = React.useCallback(async () => {
