@@ -2,6 +2,7 @@
 // React import not required with new JSX transform
 import { Routes, Route, Navigate } from "react-router-dom";
 import AppLayoutRoute from "./routes/AppLayoutRoute";
+import { useAuth } from "./context/AuthContext";
 import TopProgressBar from "./components/TopProgressBar";
 import ToastHost from "./components/ToastHost";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -44,6 +45,8 @@ function BuyRedirect() {
 }
 
 export default function App() {
+  const { isAuthenticated, booting } = useAuth();
+
   return (
     <>
       <TopProgressBar />
@@ -58,7 +61,18 @@ export default function App() {
 
         <Route element={<AppLayoutRoute />}>
           {/* Public */}
-          <Route index element={<Navigate to="/courses" replace />} />
+          <Route
+            index
+            element={
+              booting ? (
+                <div className="p-6 text-sm text-muted-foreground">Verifica sessione</div>
+              ) : isAuthenticated ? (
+                <Navigate to="/courses" replace />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
           <Route path="/forbidden" element={<ErrorBoundary><Forbidden /></ErrorBoundary>} />
           <Route path="/courses" element={<ErrorBoundary><CoursesList /></ErrorBoundary>} />
           <Route path="/_smoke/dropdown" element={<ErrorBoundary><DropdownSmoke /></ErrorBoundary>} />

@@ -132,22 +132,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Validate the access token by calling the role endpoint. If the call
+      // fails (network error or 401/403) consider the tokens invalid and clear
+      // local state so the UI doesn't treat the client as authenticated while
+      // the backend is unreachable or the token is invalid/rotated.
       let r = getRoleFromToken();
-      if (!r) {
-        try {
-          const res = await fetch(API.role, {
-            headers: { Authorization: `Bearer ${tokens.access}` },
-          });
-          if (res.ok) {
-            const data = await res.json();
-            r = (data?.role as Role) ?? r;
-          }
-  } catch (e) { console.debug('[Auth] profile sync failed inner', e); }
+      let roleCheckOk = false;
+      try {
+        const res = await fetch(API.role, {
+          headers: { Authorization: `Bearer ${access}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          r = (data?.role as Role) ?? r;
+          roleCheckOk = true;
+        } else {
+          // Non-ok response (401/403/5xx) -> treat as invalid for boot
+          console.debug('[Auth] boot role check returned not-ok', res.status);
+        }
+      } catch (e) {
+        console.debug('[Auth] boot role fetch failed', e);
       }
+
+      if (!roleCheckOk) {
+        try { clearTokens(); } catch (e) { console.debug('[Auth] boot clearTokens failed', e); }
+        setAuth({ booting: false, isAuthenticated: false, role: null });
+        return;
+      }
+
       // attempt to populate local UI-friendly user cache so legacy figma shim components
       // (which read `localStorage.artlearn_user`) display real data in the sidebar.
       try {
-      const profile = await getProfile();
+        const profile = await getProfile();
       // Prefer the DB-backed wallet, but fall back to legacy getWallet() if the DB endpoint fails
       let walletRes = await getDbWallet().catch(() => ({ ok: false } as WalletResult));
       if (!walletRes || !walletRes.ok) {
