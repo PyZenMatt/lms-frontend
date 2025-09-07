@@ -18,13 +18,15 @@ type Props = {
   onRefreshAfterSuccess?: () => Promise<void> | void;
 };
 
-export default function TeoDiscountWidget({ priceEUR, courseId, onApply }: Props) {
+export default function TeoDiscountWidget({ priceEUR, courseId, onApply, onRefreshAfterSuccess }: Props) {
   const [wallet, setWallet] = useState<WalletInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
+  const [eligible, setEligible] = useState<boolean | null>(null);
   // result will contain server-side breakdown from previewDiscount
   const [checking, setChecking] = useState(false);
+  // options are fixed TEO amounts the user can spend
   const options = [5, 10, 15];
   // TEO per 1 EUR (frontend config via Vite). Only use if explicitly provided by env/window.
   // Do NOT assume a default conversion rate here; showing TEO without a known rate
@@ -65,12 +67,35 @@ export default function TeoDiscountWidget({ priceEUR, courseId, onApply }: Props
     return () => { alive = false; };
   }, [courseId, priceEUR]);
 
+  // Ensure selected discount is still affordable when wallet, price, or TEO rate changes.
+  // Ensure selected TEO amount is still affordable when wallet changes.
+  useEffect(() => {
+    if (selectedPct === null) return;
+    const availableTEO = (typeof wallet?.balance_teo === 'number') ? wallet!.balance_teo : 0
+    if (availableTEO < selectedPct) {
+      setSelectedPct(null)
+      setResult(null)
+      setEligible(false)
+    }
+  }, [wallet, selectedPct]);
+
   async function handleCheck() {
     setChecking(true);
     setError(null);
-    const payload: { price_eur: number; course_id?: number; discount_percent?: number; [k: string]: unknown } = { price_eur: priceEUR };
+    // If user selected a fixed TEO amount, prefer sending tokens_to_spend.
+    const payload: { price_eur: number; course_id?: number; discount_percent?: number; tokens_to_spend?: number; [k: string]: unknown } = { price_eur: priceEUR };
     if (courseId) payload.course_id = courseId;
-    if (selectedPct) payload.discount_percent = selectedPct;
+    if (selectedPct) {
+      // selectedPct stores fixed TEO amount. Send tokens_to_spend.
+      payload.tokens_to_spend = selectedPct;
+      // Derive discount_percent from tokens using known rate when available.
+      // Fallback to rate=1.0 to match backend default RATE_TEOCOIN_EUR when front-end rate not provided.
+      const rate = (typeof TEO_PER_EUR === 'number' && Number.isFinite(TEO_PER_EUR)) ? TEO_PER_EUR : 1.0
+      const discountEUR = Number(selectedPct) / Number(rate)
+      if (Number.isFinite(discountEUR) && discountEUR > 0 && Number.isFinite(priceEUR) && priceEUR > 0) {
+        payload.discount_percent = Math.round((discountEUR / priceEUR) * 10000) / 100
+      }
+    }
     console.debug('[TeoDiscountWidget] preview payload:', payload);
     const res = await previewDiscount(payload);
     console.debug('[TeoDiscountWidget] preview response:', res);
@@ -81,14 +106,22 @@ export default function TeoDiscountWidget({ priceEUR, courseId, onApply }: Props
     }
     // res.data is our DiscountBreakdown shape from the server
     setResult(res.data as Record<string, unknown>);
+    // server-side eligible/tokens_required/balance (prefer data object)
+    try {
+      const data = res.data as unknown as Record<string, unknown> | undefined
+  const tokensReq = data ? (data['tokens_required'] ?? data['teo_required'] ?? data['teacher_teo']) : undefined
+      const elig = data ? data['eligible'] : undefined
+      setEligible(Boolean(tokensReq === undefined ? true : Boolean(elig)));
+    } catch {
+      setEligible(null);
+    }
   }
   async function handleApply() {
     if (!result) return;
     setError(null);
     setApplying(true);
     // propagate server-provided breakdown via onApply. Parent will call createPaymentIntent with discount flags.
-    const finalPrice = Number(result['student_pay_eur'] ?? result['student_pay'] ?? priceEUR) as number;
-    const discountEUR = Number.isFinite(Number(priceEUR - finalPrice)) ? Number(priceEUR - finalPrice) : Number(result['discount_eur'] ?? 0);
+  // finalPrice is computed later from server response when needed; avoid local unused var
       try {
       // First, try to persist the preview as a discount snapshot on the server so the flow is idempotent
       // and teachers can be notified. We call confirmDiscount which is safe to call multiple times.
@@ -96,18 +129,49 @@ export default function TeoDiscountWidget({ priceEUR, courseId, onApply }: Props
         // backend requires an order_id on confirm; frontend generates a lightweight id so the snapshot
         // can be created before the Stripe PaymentIntent exists. The PaymentReturn flow will call
         // confirmDiscount again with the real order_id (payment intent) and be idempotent.
-        const payload: Record<string, unknown> = {
-          order_id: `local_${Date.now()}`,
-          course_id: courseId,
-          price_eur: priceEUR,
-          discount_percent: selectedPct ?? undefined,
-          breakdown: result,
-        };
+          // Derive discount_percent from server preview result when possible
+          const previewStudentPay = Number(result['student_pay_eur'] ?? result['student_pay'] ?? NaN)
+          let derivedDiscountPercent: number | undefined = undefined
+          if (Number.isFinite(previewStudentPay)) {
+            const discountEUR = Number(priceEUR) - previewStudentPay
+            if (Number.isFinite(discountEUR) && discountEUR > 0 && Number.isFinite(priceEUR) && priceEUR > 0) {
+              derivedDiscountPercent = Math.round(((discountEUR / priceEUR) * 100) * 100) / 100
+            }
+          }
+          // fallback: derive from selectedPct interpreted as TEO amount using rate (fallback 1.0)
+          if (derivedDiscountPercent === undefined && typeof selectedPct === 'number') {
+            const rate = (typeof TEO_PER_EUR === 'number' && Number.isFinite(TEO_PER_EUR)) ? TEO_PER_EUR : 1.0
+            const discountEUR = Number(selectedPct) / Number(rate)
+            if (Number.isFinite(discountEUR) && discountEUR > 0 && Number.isFinite(priceEUR) && priceEUR > 0) {
+              derivedDiscountPercent = Math.round(((discountEUR / priceEUR) * 100) * 100) / 100
+            }
+          }
+
+          const payload: Record<string, unknown> = {
+            order_id: `local_${Date.now()}`,
+            course_id: courseId,
+            price_eur: priceEUR,
+            discount_percent: derivedDiscountPercent,
+            breakdown: result,
+            // include tokens_to_spend from server preview when available, otherwise the selected TEO amount
+            tokens_to_spend: result && (result['tokens_required'] ?? result['teo_required'] ?? result['teacher_teo']) ? Number(result['tokens_required'] ?? result['teo_required'] ?? result['teacher_teo']) : (typeof selectedPct === 'number' ? selectedPct : undefined),
+          };
         console.debug('[TeoDiscountWidget] confirming discount snapshot with payload:', payload)
         const conf = await confirmDiscount(payload)
         console.debug('[TeoDiscountWidget] confirmDiscount response:', conf)
         if (!conf.ok) {
-          // keep going but surface an error to user
+          // If backend explicitly returned 400 INSUFFICIENT_TOKENS, reset selection and show message
+          if (conf.status === 400 && conf.error === 'INSUFFICIENT_TOKENS') {
+            setError('Saldo insufficiente per applicare lo sconto. Seleziona un altro valore.');
+            setSelectedPct(null);
+            setResult(null);
+            setEligible(false);
+            // Ask parent to refresh wallet/balance if provided
+            if (onRefreshAfterSuccess) {
+              try { void onRefreshAfterSuccess(); } catch { /* ignore */ }
+            }
+            return;
+          }
           setError(`Impossibile registrare lo sconto: HTTP ${conf.status}`)
         } else {
           // Prefer server-side breakdown values when available (they are the source of truth).
@@ -189,9 +253,8 @@ export default function TeoDiscountWidget({ priceEUR, courseId, onApply }: Props
         setError(String(e))
       }
 
-  // Fallback: still call onApply even if confirmDiscount failed, to preserve UX
-  onApply(finalPrice, discountEUR, { breakdown: result, final_price_eur: finalPrice, discount_eur: discountEUR })
-      setApplied(true)
+  // If confirmDiscount failed we must NOT proceed to payment here.
+  // The onApply call above is only performed on successful confirm (see branch above).
     } catch (e) {
       setError(String(e));
     } finally {
@@ -206,7 +269,7 @@ export default function TeoDiscountWidget({ priceEUR, courseId, onApply }: Props
           <div className="text-sm text-muted-foreground">Sconto con TEO</div>
           <div className="text-base">Prezzo corrente: <span className="font-semibold text-foreground">{priceEUR.toFixed(2)} EUR</span></div>
         </div>
-    {loading ? (
+  {loading ? (
           <div className="h-6 w-24 animate-pulse rounded bg-muted/20" />
         ) : (
           <div className="text-right">
@@ -215,6 +278,11 @@ export default function TeoDiscountWidget({ priceEUR, courseId, onApply }: Props
           </div>
         )}
       </div>
+
+      {/* Disable entire widget until wallet loaded or wallet fetch errored */}
+      {(!loading && wallet === null) && (
+        <div className="mt-2 text-sm text-muted-foreground">Wallet non disponibile. Ricarica o effettua il login per usare TEO.</div>
+      )}
 
       {error && <div className="mt-3 rounded border border-destructive/40 bg-destructive/10 p-2 text-sm text-destructive-foreground">{error}</div>}
 
@@ -225,21 +293,23 @@ export default function TeoDiscountWidget({ priceEUR, courseId, onApply }: Props
       const discountEUR = Number((priceEUR * pct) / 100)
       // convert EUR discount to TEO required only when an explicit rate is configured
       const teoNeeded = (typeof TEO_PER_EUR === 'number' && Number.isFinite(TEO_PER_EUR)) ? (discountEUR * TEO_PER_EUR) : undefined
-      const availableTEO = (typeof wallet?.balance_teo === 'number') ? wallet!.balance_teo : 0
-      // If we don't have a reliable TEO rate, don't disable options based on TEO balance
-      const disabled = typeof teoNeeded === 'number' ? (availableTEO < teoNeeded) : false
+  const availableTEO = (typeof wallet?.balance_teo === 'number') ? wallet!.balance_teo : 0
+  // If we don't have a reliable TEO rate, don't disable options based on TEO balance
+  const disabled = typeof teoNeeded === 'number' ? (availableTEO < teoNeeded) : false
       const fmtTEO = (v?: number) => {
         if (v === undefined) return '\u2014'
         return Number(v).toFixed(v % 1 === 0 ? 0 : 2)
       }
+      const title = disabled ? `Saldo TEO insufficiente: servono ${fmtTEO(teoNeeded)} TEO` : undefined
       return (
               <button
                 key={pct}
-                onClick={() => setSelectedPct(pct)}
+                onClick={() => { if (!disabled) setSelectedPct(pct) }}
                 disabled={loading || disabled}
+                title={title}
                 className={`rounded-lg px-3 py-2 text-sm border disabled:opacity-50 ${selectedPct === pct ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-foreground border-border'}`}
               >
-        {pct}% {disabled ? '(non disponibile)' : (typeof teoNeeded === 'number' ? `-${discountEUR.toFixed(2)} / ${fmtTEO(teoNeeded)} TEO` : `-${discountEUR.toFixed(2)}`)}
+        {pct}% {disabled ? '(non disponibile)' : (typeof teoNeeded === 'number' ? `-\t${discountEUR.toFixed(2)} / ${fmtTEO(teoNeeded)} TEO` : `-\t${discountEUR.toFixed(2)}`)}
               </button>
             )
           })}
@@ -257,7 +327,8 @@ export default function TeoDiscountWidget({ priceEUR, courseId, onApply }: Props
           {result && (
             <button
               onClick={handleApply}
-              disabled={applying}
+              disabled={applying || eligible === false}
+              title={eligible === false ? 'Saldo TEO insufficiente per applicare lo sconto' : undefined}
               className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground disabled:opacity-60"
             >
               {applying ? 'Applico...' : applied ? 'Applicato' : 'Applica sconto'}
