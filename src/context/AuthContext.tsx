@@ -13,6 +13,7 @@ import {
   isAccessTokenExpired,
   type Tokens,
 } from "../lib/auth";
+import { logout as apiClientLogout } from "../lib/api";
 import { getProfile } from "../services/profile";
 import { getDbWallet, getWallet } from "../services/wallet";
 import { getUserFromToken } from "../lib/auth";
@@ -337,12 +338,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {
         console.debug('[Auth] logout: prepare backend logout failed', e);
       } finally {
-        try {
-          // Clear tokens in both API client layer and auth helpers
-          clearTokens();
-        } catch (e) {
-          console.debug('[Auth] logout: clearTokens failed', e);
-        }
+            try {
+              // Clear tokens in both auth helper and API client (two different storage keys)
+              try { clearTokens(); } catch (e) { console.debug('[Auth] logout: clearTokens failed', e); }
+              try { apiClientLogout(); } catch (e) { console.debug('[Auth] logout: apiClientLogout failed', e); }
+              try { localStorage.removeItem("auth_tokens"); } catch { /* best-effort */ }
+            } catch (e) {
+              console.debug('[Auth] logout: clearing storages failed', e);
+            }
         try {
           // Remove legacy UI cache
           localStorage.removeItem("artlearn_user");
@@ -350,10 +353,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.debug('[Auth] logout: remove artlearn_user failed', e);
         }
         setAuth({ booting: false, isAuthenticated: false, role: null });
-        try { window.dispatchEvent(new CustomEvent('auth:logout')); } catch (e) { console.debug('[Auth] logout dispatch failed', e); }
-        // Navigate to login and do a hard reload to ensure no in-memory schedulers retain tokens
-        try { navigate('/login', { replace: true }); } catch {}
-        try { window.location.reload(); } catch (e) { console.debug('[Auth] reload failed', e); }
+  try { window.dispatchEvent(new CustomEvent('auth:logout')); } catch (e) { console.debug('[Auth] logout dispatch failed', e); }
+  // Ensure we land on the login page and avoid any SPA boot redirect to /courses.
+  try { window.location.replace('/login'); } catch { try { navigate('/login', { replace: true }); } catch { /* ignore */ } }
       }
     })();
   }, [navigate]);
