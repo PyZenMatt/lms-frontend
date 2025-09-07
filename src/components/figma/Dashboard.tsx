@@ -157,64 +157,18 @@ export function Dashboard({ onContinueCourse, onNavigateToPage }: DashboardProps
                   </Card>
                 ))
               ) : (
-                // fallback static examples
-                <>
-                  <Card className="cursor-pointer hover:shadow-2xl transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex gap-4">
-                        <ImageWithFallback 
-                          src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=80&h=80&fit=crop&crop=center"
-                          alt="Digital Painting Course"
-                          className="size-16 rounded-lg object-cover"
-                        />
-                        <div className="flex-1">
-                          <h4>Digital Painting Fundamentals</h4>
-                          <p className="text-sm text-muted-foreground">Master the basics of digital art creation</p>
-                          <div className="mt-2 flex items-center gap-4">
-                            <div className="flex-1">
-                              <Progress value={68} className="h-2" />
-                              <p className="text-xs text-muted-foreground mt-1">68% complete</p>
-                            </div>
-                            <Button 
-                              size="sm"
-                              onClick={() => { if (onContinueCourse) return onContinueCourse?.('1'); navigate('/learn/1'); }}
-                            >
-                              Continue
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="cursor-pointer hover:shadow-2xl transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex gap-4">
-                        <ImageWithFallback 
-                          src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=80&h=80&fit=crop&crop=center"
-                          alt="Character Design Course"
-                          className="size-16 rounded-lg object-cover"
-                        />
-                        <div className="flex-1">
-                          <h4>Character Design Workshop</h4>
-                          <p className="text-sm text-muted-foreground">Create compelling characters from concept to finish</p>
-                          <div className="mt-2 flex items-center gap-4">
-                            <div className="flex-1">
-                              <Progress value={34} className="h-2" />
-                              <p className="text-xs text-muted-foreground mt-1">34% complete</p>
-                            </div>
-                            <Button 
-                              size="sm"
-                              onClick={() => { if (onContinueCourse) return onContinueCourse?.('2'); navigate('/learn/2'); }}
-                            >
-                              Continue
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </>
+                // neutral empty state when the user has no enrolled courses
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <h4 className="text-lg font-medium">Non hai corsi attivi</h4>
+                    <p className="text-sm text-muted-foreground mt-2">Sembra che tu non abbia ancora corsi attivi. Esplora il catalogo per trovare qualcosa di interessante.</p>
+                    <div className="mt-4 flex justify-center">
+                      <Button size="sm" onClick={() => onNavigateToPage ? onNavigateToPage('catalog') : navigate('/catalog') }>
+                        Vai al catalogo
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
             </div>
 
