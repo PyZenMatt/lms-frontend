@@ -1,7 +1,7 @@
 // src/pages/CourseCheckout.tsx
 import React from "react"
 import { useParams, Link } from "react-router-dom"
-import { getPaymentSummary, createPaymentIntent, previewDiscount } from "../services/payments"
+import { getPaymentSummary, createPaymentIntent, previewDiscount, confirmStripePaymentSmart } from "../services/payments"
 import { getCourse } from "../services/courses"
 import { loadStripe } from "@stripe/stripe-js"
 import type { Stripe } from "@stripe/stripe-js"
@@ -148,7 +148,8 @@ export default function CourseCheckout() {
     // If backend could not apply TEO discount due to insufficient DB balance,
     // surface a non-blocking warning so the user understands why discount wasn't applied.
     try {
-      const meta = (res as any).metadata ?? (res as any).raw?.metadata
+      const rRaw = res as unknown as { metadata?: Record<string, unknown>; raw?: { metadata?: Record<string, unknown> } }
+      const meta = rRaw.metadata ?? rRaw.raw?.metadata
       if (meta && meta.teo_balance_insufficient === "True") {
         setError(
           "Impossibile applicare lo sconto TEO (saldo TEO insufficiente lato server). Puoi comunque procedere con il pagamento con carta."
@@ -353,18 +354,84 @@ function StripeCheckoutForm({ returnTo }: { returnTo: string }) {
   const elements = useElements()
   const [busy, setBusy] = React.useState(false)
   const [err, setErr] = React.useState<string | null>(null)
+  const [confirmed, setConfirmed] = React.useState<null | { enrolled?: boolean; status?: string }>(null)
+
+  // Extract course id from returnTo (query param) or window for confirm endpoint
+  const courseId = React.useMemo(() => {
+    try {
+      const u = new URL(returnTo, window.location.origin)
+      const c = u.searchParams.get("course")
+      return c ? Number(c) : undefined
+    } catch {
+      return undefined
+    }
+  }, [returnTo])
+
+  async function callBackendConfirm(piId: string, clientSecret?: string, redirect_status?: string) {
+    if (!courseId) return
+    try {
+      console.debug("[Checkout] Confirming enrollment on backend", { courseId, piId, redirect_status })
+      const res = await confirmStripePaymentSmart(courseId, { payment_intent: piId, payment_intent_client_secret: clientSecret, redirect_status })
+      if (res.ok) {
+        setConfirmed({ enrolled: res.data.enrolled, status: res.data.status })
+        console.debug("[Checkout] Backend confirm success", res.data)
+      } else {
+        console.warn("[Checkout] Backend confirm failed", res.error)
+      }
+    } catch (e) {
+      console.error("[Checkout] Backend confirm exception", e)
+    }
+  }
+
+  // Polling fallback: if Elements returns without redirect (PI already succeeded)
+  async function pollAndConfirm(piClientSecret: string, attempts = 3) {
+    if (!stripe) return
+    try {
+      const pi = await stripe.retrievePaymentIntent(piClientSecret)
+      const id = pi?.paymentIntent?.id
+      const status = pi?.paymentIntent?.status
+      if (id && status === 'succeeded') {
+        await callBackendConfirm(id, piClientSecret, status)
+        return
+      }
+      if (attempts > 0 && status && ['processing','requires_action'].includes(status)) {
+        setTimeout(() => pollAndConfirm(piClientSecret, attempts - 1), 2500)
+      }
+    } catch (e) {
+      console.debug("[Checkout] poll retrievePaymentIntent error", e)
+    }
+  }
 
   async function onConfirm(e: React.FormEvent) {
     e.preventDefault()
     if (!stripe || !elements) return
     setBusy(true)
     setErr(null)
-    const { error } = await stripe.confirmPayment({
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
+      // If 3DS or redirect needed, return_url handles it; after return the dedicated return page should also call confirm endpoint (not yet implemented) – we still try immediate confirm.
       confirmParams: { return_url: returnTo },
+      redirect: 'if_required',
     })
     setBusy(false)
-    if (error) setErr(error.message || "Errore nella conferma del pagamento.")
+    if (error) {
+      setErr(error.message || "Errore nella conferma del pagamento.")
+      return
+    }
+    // If no redirect required and we have a succeeded PI, confirm immediately with backend.
+    try {
+      const piId = paymentIntent?.id
+      const status = paymentIntent?.status
+      const clientSecret = paymentIntent?.client_secret
+      if (piId && status === 'succeeded') {
+        await callBackendConfirm(piId, clientSecret || undefined, status)
+      } else if (clientSecret) {
+        // Start lightweight polling; covers 'processing' -> 'succeeded' transition.
+        pollAndConfirm(clientSecret, 4)
+      }
+    } catch (e) {
+      console.debug('[Checkout] immediate backend confirm failed', e)
+    }
   }
 
   return (
@@ -381,10 +448,15 @@ function StripeCheckoutForm({ returnTo }: { returnTo: string }) {
             <Spinner size={16} className="inline mr-2 text-current" />
             Elaboro…
           </>
+        ) : confirmed?.enrolled ? (
+          'Iscrizione completata ✅'
         ) : (
-          "Conferma pagamento"
+          'Conferma pagamento'
         )}
       </button>
+      {confirmed?.enrolled && (
+        <div className="text-sm text-emerald-600">Sei iscritto al corso. Puoi tornare alla pagina del corso.</div>
+      )}
     </form>
   )
 }
