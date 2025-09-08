@@ -36,6 +36,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
 
   const studentMenuItems = [
     { title: "Dashboard", page: "dashboard", icon: Home },
+    // For admins we'll replace this item with Approve courses elsewhere; keep default for regular students
     { title: "Learning Paths", page: "courses", icon: BookOpen },
     { title: "Peer Review", page: "peer-review", icon: UserCheck },
     { title: "Community", page: "community", icon: Users },
@@ -54,6 +55,17 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
   ]
 
   const menuItems = isTeacherRole ? teacherMenuItems : studentMenuItems
+
+  // If user is admin, replace Learning Paths with Approve courses
+  // runtime-safe admin check without 'any'
+  const tokenRole = (user as Record<string, unknown> | undefined)?.role
+  if (typeof tokenRole === 'string' && tokenRole.toLowerCase() === 'admin') {
+    const idx = menuItems.findIndex((i) => i.title === 'Learning Paths')
+    if (idx !== -1) {
+      // mutate a copy to avoid changing constants
+      menuItems[idx] = { title: 'Approve courses', page: 'approve-courses', icon: BookOpen }
+    }
+  }
 
   function UnreadBadge() {
     const [count, setCount] = React.useState<number | null>(null)
@@ -100,7 +112,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
       const onUpdated = () => { fetchCount() }
       window.addEventListener("notifications:updated", onUpdated as EventListener)
       return () => { mounted = false; window.removeEventListener("notifications:updated", onUpdated as EventListener) }
-    }, [isTeacherRole])
+  }, [])
 
     if (!count || count <= 0) return null
     return <Badge variant="secondary" className="ml-auto bg-yellow-100 text-yellow-800">{count}</Badge>

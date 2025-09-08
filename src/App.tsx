@@ -32,6 +32,7 @@ import DashboardRedirect from "./pages/DashboardRedirect";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import StakingPage from "./pages/teacher/Staking";
 import AdminDashboard from "./pages/AdminDashboard";
+import ApproveCourses from "./pages/admin/ApproveCourses";
 import CoursesStudioList from "./pages/studio/CoursesStudioList"
 import CourseStudioForm from "./pages/studio/CourseStudioForm"
 import CourseBuilder from "./pages/studio/CourseBuilder"
@@ -168,6 +169,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+           <Route
+             path="/dashboard/student"
+             element={
+               <ProtectedRoute>
+                 <ErrorBoundary><StudentDashboard /></ErrorBoundary>
+               </ProtectedRoute>
+             }
+           />
 
           {/* Peer Review pages */}
           <Route
@@ -193,6 +202,15 @@ export default function App() {
             element={
               <RoleRoute allow="admin">
                 <ErrorBoundary><AdminDashboard /></ErrorBoundary>
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="/admin/approve-courses"
+            element={
+              <RoleRoute allow="admin">
+                <ErrorBoundary><ApproveCourses /></ErrorBoundary>
               </RoleRoute>
             }
           />

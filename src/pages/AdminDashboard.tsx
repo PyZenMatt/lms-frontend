@@ -4,8 +4,18 @@ import {
   listPendingTeachers,
   approveTeacher,
   rejectTeacher,
-  type PendingTeacher,
 } from "../services/admin";
+
+// local, minimal PendingTeacher shape used by this page (avoid relying on export)
+type PendingTeacher = {
+  id: number | string;
+  username?: string | null;
+  email?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  applied_at?: string | null;
+  created_at?: string | null;
+};
 import { Spinner } from "../components/ui/spinner";
 import { Alert } from "../components/ui/alert";
 import EmptyState from "../components/ui/empty-state";
@@ -36,13 +46,16 @@ export default function AdminDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const { items, count } = await listPendingTeachers({
+      const res = await listPendingTeachers({
         page,
         page_size: pageSize,
-        search: appliedSearch || undefined,
+        q: appliedSearch || undefined,
       });
-      setItems(items);
-      setCount(count ?? items.length);
+      // api.get returns { ok, status, data, error } - data should contain { items, count }
+      const payload = res?.data as any;
+      const safeItems: PendingTeacher[] = Array.isArray(payload?.items) ? payload.items : [];
+      setItems(safeItems);
+      setCount(typeof payload?.count === "number" ? payload.count : safeItems.length);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       setError(msg || "Errore inatteso");
@@ -62,7 +75,8 @@ export default function AdminDashboard() {
   async function onApprove(id: number | string) {
   setBusy((b) => ({ ...b, [id]: "approve" as const }));
     try {
-      await approveTeacher(id);
+      // approveTeacher is a wrapper for approveCourse and expects a number; coerce if needed
+      await approveTeacher(Number(id));
       // ricarica la pagina corrente (se svuotata e non prima, scala pagina)
       const after = Math.max(1, Math.min(page, Math.ceil((count - 1) / pageSize) || 1));
       if (after !== page) setPage(after);
@@ -142,16 +156,16 @@ export default function AdminDashboard() {
           <h2 className="text-base font-semibold">Docenti in attesa</h2>
           <span className="text-sm text-muted-foreground">
             {loading ? (
-              <span className="inline-flex items-center gap-3"><Spinner /> Caricamento…</span>
-            ) : `${items.length} visibili / ${count} totali`}
+                <span className="inline-flex items-center gap-3"><Spinner /> Caricamento…</span>
+              ) : `${(items || []).length} visibili / ${count} totali`}
           </span>
         </div>
 
   {error && <Alert variant="error">{error}</Alert>}
 
-        {loading ? (
+  {loading ? (
           <div className="p-4 text-sm text-muted-foreground"><Spinner /> Caricamento…</div>
-        ) : items.length === 0 ? (
+  ) : (items || []).length === 0 ? (
           <EmptyState title="Nessun docente in attesa" description={appliedSearch ? `Nessun docente in attesa per “${appliedSearch}”` : "Nessun docente in attesa."} />
         ) : (
           <>
@@ -166,7 +180,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((u) => {
+                  {(items || []).map((u) => {
                     const name = prettyName(u);
                     const busyState = busy[u.id] || "";
                     const isApproving = busyState === "approve";

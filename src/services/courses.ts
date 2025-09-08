@@ -138,7 +138,7 @@ function normalizeList(payload: Course[] | DrfPaginated<Course>): ListOut {
 export async function listCourses(params: ListParams = {}) {
   const res = await api.get<Course[] | DrfPaginated<Course>>("/v1/courses/", { params: params as any })
   if (!res.ok) return { ok: false as const, status: res.status, data: [] as Course[] } as ListOut
-  return normalizeList(res.data)
+  return normalizeList(res.data!)
 }
 
 export async function getCourse(id: number | string) {

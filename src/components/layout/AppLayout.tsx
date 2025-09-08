@@ -115,7 +115,7 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                         const u = JSON.parse(s) as { role?: string } | null;
                         if (u?.role) return getDashboardHome(u.role);
                       }
-                    } catch (_) { /* ignore and fallback */ }
+                    } catch { /* ignore and fallback */ }
                     return "/dashboard";
                   case "courses":
                     return "/courses";
@@ -143,6 +143,8 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                     return "/notifications";
                   case "teacher-opportunities":
                     return "/teacher/pending-discounts";
+                  case "approve-courses":
+                    return "/admin/approve-courses";
                   case "profile":
                     return "/profile";
                   default:
