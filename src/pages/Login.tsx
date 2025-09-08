@@ -2,6 +2,7 @@ import React from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { getRoleFromToken } from "@/lib/auth";
+import { getDashboardHome } from "@/lib/dashboard";
 import {
   Card,
   CardHeader,
@@ -45,9 +46,7 @@ export default function LoginPage() {
 
   // Decide la home in base al ruolo
   const role = getRoleFromToken();
-    if (role === "admin")      { nav("/admin", { replace: true }); return; }
-    if (role === "teacher")    { nav("/teacher", { replace: true }); return; }
-    /* student/default */        nav("/dashboard", { replace: true });
+    nav(getDashboardHome(role), { replace: true });
   }
 
   return (

@@ -20,6 +20,9 @@ type RequestOptions = {
   headers?: Record<string, string>;
   body?: any;
   noAuth?: boolean;
+  // if true, a 403 response will emit a dedicated fatal event so callers can choose to navigate
+  // to a forbidden page or take other global action. Default: false (soft 403).
+  fatal403?: boolean;
   signal?: AbortSignal;
   // internal
   _retried?: boolean;
@@ -272,7 +275,7 @@ async function coreRequest<T>(
       data = txt;
     }
 
-  if (!res.ok) {
+    if (!res.ok) {
       // 403/401 cleanup if needed
       if (res.status === 401 || res.status === 403) {
         // optionally clear tokens only on explicit instruction
@@ -289,9 +292,22 @@ async function coreRequest<T>(
       } catch {
         // ignore
       }
-  const err = data ?? { message: "Request failed" };
-  const normalizedError = err instanceof Error ? err : new Error(typeof err === 'string' ? err : JSON.stringify(err));
-  return { ok: false, status: res.status, error: normalizedError };
+
+      // If caller requested fatal403 behavior, emit a dedicated event so a central
+      // listener may choose to navigate to /forbidden or show a global modal.
+      try {
+        if (res.status === 403 && options?.fatal403) {
+          const fatalDetail = { status: res.status, url, method, data };
+          try { eventBus.emit("api:fatal403", fatalDetail); } catch {}
+          try { window.dispatchEvent(new CustomEvent("api:fatal403", { detail: fatalDetail })); } catch {}
+        }
+      } catch {
+        // ignore
+      }
+
+      const err = data ?? { message: "Request failed" };
+      const normalizedError = err instanceof Error ? err : new Error(typeof err === 'string' ? err : JSON.stringify(err));
+      return { ok: false, status: res.status, error: normalizedError };
     }
 
     return { ok: true, status: res.status, data: data as T };

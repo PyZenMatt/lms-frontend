@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import TeacherDecisionPanel from "./TeacherDecisionPanel";
 
 export default function TeacherDecisionNav() {
-  const { isAuthenticated, isTeacher } = useAuth();
+  const { isAuthenticated, isTeacher, authChecked, role } = useAuth();
   const [count, setCount] = React.useState<number>(0);
   const [open, setOpen] = React.useState(false);
   const [selectedId, setSelectedId] = React.useState<number | null>(null);
@@ -35,7 +35,10 @@ export default function TeacherDecisionNav() {
 
   React.useEffect(() => {
     let mounted = true;
-    if (!isAuthenticated || !isTeacher) {
+  // Avoid calling teacher-only endpoints until we have confirmed auth and the
+  // role is explicitly 'teacher'. This prevents admins (or unresolved booting)
+  // from triggering 403 responses on teacher-only APIs.
+  if (!authChecked || !isAuthenticated || role !== 'teacher') {
       setCount(0);
       setPending([]);
       return;
@@ -92,7 +95,7 @@ export default function TeacherDecisionNav() {
       mounted = false;
       window.removeEventListener("notifications:updated", onUpdated as EventListener);
     };
-  }, [isAuthenticated, isTeacher, count]);
+  }, [isAuthenticated, isTeacher, authChecked, role, count]);
 
   async function openList() {
     if (!isAuthenticated || !isTeacher) return;

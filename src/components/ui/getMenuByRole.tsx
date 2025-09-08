@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Home, BookOpen, Users, Wallet, Settings, Bell, Sparkles } from "lucide-react";
+import { getDashboardHome } from "@/lib/dashboard";
 
 export type Role = "student" | "teacher" | "admin" | "anonymous";
 
@@ -27,7 +28,7 @@ export function getMenuByRole(role: Role, isAuthenticated: boolean): MenuSection
   if (role === "teacher" || role === "admin") {
     sections.push({
       items: [
-        { to: "/teacher", label: "Dashboard", icon: <Home size={20} strokeWidth={1.75} />, match: "prefix" },
+        { to: getDashboardHome(role), label: "Dashboard", icon: <Home size={20} strokeWidth={1.75} />, match: "prefix" },
         { to: "/studio/courses/new", label: "Studio Docente", icon: <Sparkles size={20} strokeWidth={1.75} />, match: "prefix" },
         { to: "/courses", label: "Corsi", icon: <BookOpen size={20} strokeWidth={1.75} />, match: "prefix" },
         { to: "/wallet", label: "Wallet", icon: <Wallet size={20} strokeWidth={1.75} />, match: "prefix" },
@@ -42,9 +43,9 @@ export function getMenuByRole(role: Role, isAuthenticated: boolean): MenuSection
       ],
     });
   } else {
-    sections.push({
+  sections.push({
       items: [
-        { to: "/dashboard", label: "Dashboard", icon: <Home size={20} strokeWidth={1.75} />, match: "prefix" },
+    { to: getDashboardHome(role), label: "Dashboard", icon: <Home size={20} strokeWidth={1.75} />, match: "prefix" },
         { to: "/courses", label: "Esplora Corsi", icon: <BookOpen size={20} strokeWidth={1.75} />, match: "prefix" },
         { to: "/my/courses", label: "I miei corsi", icon: <Users size={20} strokeWidth={1.75} />, match: "prefix" },
         { to: "/wallet", label: "Wallet", icon: <Wallet size={20} strokeWidth={1.75} />, match: "prefix" },
@@ -64,7 +65,7 @@ export function getMenuByRole(role: Role, isAuthenticated: boolean): MenuSection
 
   // admin section
   if (role === "admin") {
-    sections.push({ items: [{ to: "/admin", label: "Admin", icon: <Settings size={20} strokeWidth={1.75} />, match: "prefix" }] });
+  sections.push({ items: [{ to: "/admin", label: "Admin", icon: <Settings size={20} strokeWidth={1.75} />, match: "prefix" }] });
   }
 
   // final utilities

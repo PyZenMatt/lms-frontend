@@ -2,6 +2,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getDashboardHome } from "@/lib/dashboard";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { authChecked, isAuthenticated } = useAuth();
@@ -45,8 +46,19 @@ export function RoleRoute({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // If role is not yet known, show a pending state instead of forbidding.
+  if (!role) {
+    return <div className="p-6 text-sm text-muted-foreground">Verifica permessi</div>;
+  }
+
+  // If the user landed on the generic /dashboard route, redirect them to their
+  // canonical dashboard/home for the role instead of treating it as forbidden.
+  if (location.pathname === "/dashboard") {
+    return <Navigate to={getDashboardHome(role)} replace />;
+  }
+
   const allowed = Array.isArray(allow) ? allow : [allow];
-  if (!role || !allowed.includes(role)) {
+  if (!allowed.includes(role)) {
     return <Navigate to={redirectTo} replace />;
   }
 

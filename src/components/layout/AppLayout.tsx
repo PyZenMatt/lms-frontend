@@ -20,6 +20,7 @@ import {
 } from "@/components/figma/ui/dropdown-menu";
 import { Wallet as WalletIcon, User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
 import ThemeToggleIcon from "@/components/ThemeToggleIcon";
+import { getDashboardHome } from "@/lib/dashboard";
 
 export default function AppLayout({ children }: { children?: React.ReactNode }) {
   // derive location early so collapsed can be correct on first render
@@ -100,12 +101,21 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
       >
           <AppSidebar
             currentPage={currentPage}
-            onPageChange={(page) => {
+              onPageChange={(page) => {
               // map sidebar page tokens to app routes
               const pageToPath = (p: string) => {
                 switch (p) {
                   // app index and most dashboards point to courses listing by default
                   case "dashboard":
+                    // If the user has a role-aware dashboard mapping available in localStorage
+                    try {
+                      // prefer artlearn_user role when available, else fallback to default
+                      const s = localStorage.getItem('artlearn_user');
+                      if (s) {
+                        const u = JSON.parse(s) as { role?: string } | null;
+                        if (u?.role) return getDashboardHome(u.role);
+                      }
+                    } catch (_) { /* ignore and fallback */ }
                     return "/dashboard";
                   case "courses":
                     return "/courses";

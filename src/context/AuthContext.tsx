@@ -1,6 +1,7 @@
 // src/context/AuthContext.tsx
 /* eslint-disable react-refresh/only-export-components */
 import React, { useContext, useEffect, useMemo, useState } from "react";
+import { getDashboardHome } from "@/lib/dashboard";
 import { useNavigate, useLocation } from "react-router-dom";
 import { API } from "../lib/config";
 import {
@@ -113,11 +114,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const redirectParam = params.get("redirect");
       const fromState = (location.state as unknown as { from?: { pathname?: string } })?.from?.pathname;
       const effectiveRole = roleArg ?? role;
-      const target = redirectParam || fromState || (effectiveRole === "admin" ? "/admin" : effectiveRole === "teacher" ? "/teacher" : "/dashboard");
+      const target = redirectParam || fromState || getDashboardHome(effectiveRole);
       navigate(target, { replace: true });
     } catch (err) {
       console.debug('[Auth] redirectAfterAuth failed', err);
-      navigate("/dashboard", { replace: true });
+  try { navigate(getDashboardHome(role), { replace: true }); } catch (_err) { navigate('/dashboard', { replace: true }); }
     }
   }, [location.search, location.state, navigate, role]);
 
@@ -411,7 +412,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   authChecked: Boolean(authChecked),
       isAuthenticated,
       role,
-      isTeacher: role === "teacher" || role === "admin",
+  // isTeacher should be true only for explicit teacher accounts.
+  // Administrators are a distinct role and must not mount teacher-only UI.
+  isTeacher: role === "teacher",
   // defaults to satisfy AuthCtx - real values provided in fullValue below
   pendingTeoCount: 0,
   setPendingTeoCount: (n: number) => { void n; },

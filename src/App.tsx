@@ -28,6 +28,7 @@ import VerifyEmailSent from "./pages/VerifyEmailSent";
 import Forbidden from "./pages/Forbidden";
 import ProfilePage from "./pages/ProfilePage";
 import StudentDashboard from "./pages/StudentDashboard";
+import DashboardRedirect from "./pages/DashboardRedirect";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import StakingPage from "./pages/teacher/Staking";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -158,14 +159,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <ErrorBoundary><StudentDashboard /></ErrorBoundary>
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/dashboard" element={<DashboardRedirect />} />
           <Route
             path="/profile"
             element={
