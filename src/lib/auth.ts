@@ -95,3 +95,10 @@ export function isAccessTokenExpired(token?: string | null, leewaySeconds = 30):
     return true;
   }
 }
+
+/**
+ * Quick predicate: is there any token stored client-side (access or refresh)?
+ */
+export function hasToken(): boolean {
+  return Boolean(getAccessToken() || getRefreshToken());
+}

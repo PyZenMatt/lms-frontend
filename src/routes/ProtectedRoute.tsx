@@ -13,6 +13,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <div className="p-6 text-sm text-muted-foreground">Verifica sessione</div>;
   }
   if (!isAuthenticated) {
+    try {
+      window.dispatchEvent(new CustomEvent('auth_guard_redirect', { detail: { reason: 'not_authenticated', path: location.pathname, authChecked, isAuthenticated } }));
+  } catch (e) { console.debug('[AuthGuard] dispatch failed', e); }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   return <>{children}</>;
@@ -36,6 +39,9 @@ export function RoleRoute({
     return <div className="p-6 text-sm text-muted-foreground">Verifica permessi</div>;
   }
   if (!isAuthenticated) {
+    try {
+      window.dispatchEvent(new CustomEvent('auth_guard_redirect', { detail: { reason: 'not_authenticated', path: location.pathname, authChecked, isAuthenticated, role } }));
+  } catch (e) { console.debug('[AuthGuard] dispatch failed', e); }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
