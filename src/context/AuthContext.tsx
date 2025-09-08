@@ -5,12 +5,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { API } from "../lib/config";
 import {
   saveTokens,
-  loadTokens,
   clearTokens,
   getRoleFromToken,
   getAccessToken,
   getRefreshToken,
   isAccessTokenExpired,
+  hasToken,
   type Tokens,
 } from "../lib/auth";
 import { logout as apiClientLogout } from "../lib/api";
@@ -95,12 +95,13 @@ async function httpJSON<T>(
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // Start conservatively: do not assume authenticated until boot completes.
   const [{ booting, isAuthenticated, role, authChecked }, setAuth] = useState<{
     booting: boolean;
     isAuthenticated: boolean;
     role: Role;
     authChecked: boolean;
-  }>({ booting: true, isAuthenticated: !!loadTokens(), role: getRoleFromToken(), authChecked: false });
+  }>({ booting: true, isAuthenticated: false, role: null, authChecked: false });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -123,10 +124,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Boot: se ho token ma non ho role nel JWT, provo a leggerlo dal server
   useEffect(() => {
     (async () => {
-      const tokens = loadTokens();
-      // If no tokens at all, we are anonymous
-      if (!tokens) {
-    setAuth({ booting: false, isAuthenticated: false, role: null, authChecked: true });
+      // If there are no tokens stored, mark auth as checked and anonymous immediately.
+      if (!hasToken()) {
+        setAuth({ booting: false, isAuthenticated: false, role: null, authChecked: true });
         return;
       }
       // If access token is missing or expired, avoid treating user as authenticated

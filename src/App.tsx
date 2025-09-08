@@ -248,10 +248,19 @@ export default function App() {
             }
           />
 
-          {/* 404 */}
-          <Route path="*" element={<Navigate to="/courses" replace />} />
+          {/* 404: decide after authChecked to avoid redirect races */}
+          <Route
+            path="*"
+            element={<ConditionalFallback />}
+          />
         </Route>
       </Routes>
     </>
   );
+}
+
+function ConditionalFallback() {
+  const { authChecked, isAuthenticated, booting } = useAuth();
+  if (!authChecked || booting) return <div className="p-6 text-sm text-muted-foreground">Verifica sessione</div>;
+  return isAuthenticated ? <Navigate to="/courses" replace /> : <Navigate to="/login" replace />;
 }
