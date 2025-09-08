@@ -204,7 +204,7 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                       <span>Settings</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => { if (typeof logout === 'function') { logout(); navigate('/login'); } else navigate('/login'); }}>
+                    <DropdownMenuItem onClick={() => { if (typeof logout === 'function') { logout(); navigate('/login', { replace: true }); } else navigate('/login', { replace: true }); }}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>

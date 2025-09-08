@@ -4,11 +4,13 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { booting, isAuthenticated } = useAuth();
+  const { authChecked, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  if (booting) {
-    return <div className="p-6 text-sm text-muted-foreground">Verifica sessione…</div>;
+  // Don't redirect to login until we've checked auth status to avoid
+  // transient redirects when booting/refresh is in progress.
+  if (!authChecked) {
+    return <div className="p-6 text-sm text-muted-foreground">Verifica sessione</div>;
   }
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -28,11 +30,10 @@ export function RoleRoute({
   /** Dove reindirizzare in caso di ruolo non ammesso (default: "/forbidden") */
   redirectTo?: string;
 }) {
-  const { booting, isAuthenticated, role } = useAuth();
+  const { authChecked, isAuthenticated, role } = useAuth();
   const location = useLocation();
-
-  if (booting) {
-    return <div className="p-6 text-sm text-muted-foreground">Verifica permessi…</div>;
+  if (!authChecked) {
+    return <div className="p-6 text-sm text-muted-foreground">Verifica permessi</div>;
   }
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;

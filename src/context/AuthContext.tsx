@@ -24,6 +24,8 @@ type Role = "student" | "teacher" | "admin" | null;
 
 type AuthCtx = {
   booting: boolean;
+  /** Indicates the initial auth boot/verification completed at least once */
+  authChecked: boolean;
   isAuthenticated: boolean;
   role: Role;
   isTeacher: boolean;
@@ -47,6 +49,7 @@ export const useAuth = () => {
     return {
       booting: false,
       isAuthenticated: false,
+  authChecked: false,
       role: null,
       isTeacher: false,
       pendingTeoCount: 0,
@@ -92,11 +95,12 @@ async function httpJSON<T>(
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [{ booting, isAuthenticated, role }, setAuth] = useState<{
+  const [{ booting, isAuthenticated, role, authChecked }, setAuth] = useState<{
     booting: boolean;
     isAuthenticated: boolean;
     role: Role;
-  }>({ booting: true, isAuthenticated: !!loadTokens(), role: getRoleFromToken() });
+    authChecked: boolean;
+  }>({ booting: true, isAuthenticated: !!loadTokens(), role: getRoleFromToken(), authChecked: false });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -122,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const tokens = loadTokens();
       // If no tokens at all, we are anonymous
       if (!tokens) {
-        setAuth({ booting: false, isAuthenticated: false, role: null });
+    setAuth({ booting: false, isAuthenticated: false, role: null, authChecked: true });
         return;
       }
       // If access token is missing or expired, avoid treating user as authenticated
@@ -130,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!access || isAccessTokenExpired(access)) {
         // Clear any stale tokens and bail out as anonymous. Do not attempt silent refresh here.
         try { clearTokens(); } catch (e) { console.debug('[Auth] boot clearTokens failed', e); }
-        setAuth({ booting: false, isAuthenticated: false, role: null });
+  setAuth({ booting: false, isAuthenticated: false, role: null, authChecked: true });
         return;
       }
 
@@ -158,7 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!roleCheckOk) {
         try { clearTokens(); } catch (e) { console.debug('[Auth] boot clearTokens failed', e); }
-        setAuth({ booting: false, isAuthenticated: false, role: null });
+  setAuth({ booting: false, isAuthenticated: false, role: null, authChecked: true });
         return;
       }
 
@@ -185,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const tokensCount = walletRes && walletRes.ok ? ((walletRes.data as Record<string, unknown>)?.balance_teo ?? 0) : 0;
         if (profile) {
           const profileRec = profile as Record<string, unknown>;
-          const walletAddress = (walletRes && walletRes.ok && walletRes.data && typeof walletRes.data === 'object' && 'address' in (walletRes.data as Record<string, unknown>)) ? (walletRes.data as Record<string, unknown>).address as string | null : null;
+      const walletAddress = (walletRes && walletRes.ok && walletRes.data && typeof walletRes.data === 'object' && 'address' in (walletRes.data as Record<string, unknown>)) ? ((walletRes.data as unknown) as Record<string, unknown>).address as string | null : null;
           const artUser = {
             id: profileRec?.id ? String(profileRec.id) : (profile.username ?? profile.email ?? ""),
             name: (profile.username ?? ((`${profile.first_name ?? ""} ${profile.last_name ?? ""}`).trim() || profile.email || "User")),
@@ -199,7 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           // fallback: use token info and wallet result so UI isn't empty
           const tokenUser = getUserFromToken();
-          const walletAddress = walletRes && walletRes.ok ? ((walletRes as any).data?.address ?? null) : null;
+          const walletAddress = walletRes && walletRes.ok ? (((walletRes as unknown) as Record<string, any>).data?.address ?? null) : null;
           const artUser = {
             id: tokenUser?.username ?? tokenUser?.email ?? "",
             name: (tokenUser?.username) ?? (((tokenUser?.first_name ?? "") + " " + (tokenUser?.last_name ?? "")).trim()) ?? tokenUser?.email ?? "",
@@ -212,7 +216,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save artlearn_user fallback failed', e); }
         }
   } catch (err) { console.debug('[Auth] profile sync failed', err); }
-  setAuth({ booting: false, isAuthenticated: true, role: r });
+  setAuth({ booting: false, isAuthenticated: true, role: r, authChecked: true });
     })();
   }, []);
 
@@ -229,7 +233,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     const finalRole = roleArg ?? getRoleFromToken();
-    setAuth({ booting: false, isAuthenticated: !unverified, role: finalRole });
+  setAuth({ booting: false, isAuthenticated: !unverified, role: finalRole, authChecked: true });
     // populate artlearn_user so legacy UI components (figma shim) pick up real data
     try {
       const profile = await getProfile();
@@ -252,7 +256,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const tokensCount = walletRes && walletRes.ok ? ((walletRes.data as Record<string, unknown>)?.balance_teo ?? 0) : 0;
       if (profile) {
         const profileRec = profile as Record<string, unknown>;
-        const walletAddress = walletRes && walletRes.ok ? ((walletRes as any).data?.address ?? null) : null;
+  const walletAddress = walletRes && walletRes.ok ? (((walletRes as unknown) as Record<string, any>).data?.address ?? null) : null;
         const artUser = {
           id: profileRec?.id ? String(profileRec.id) : (profile.username ?? profile.email ?? ""),
           name: (profile.username ?? ((`${profile.first_name ?? ""} ${profile.last_name ?? ""}`).trim() || profile.email || "User")),
@@ -352,7 +356,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {
           console.debug('[Auth] logout: remove artlearn_user failed', e);
         }
-        setAuth({ booting: false, isAuthenticated: false, role: null });
+        // Clear react-query cache and mark auth checked so guards stop waiting
+        try {
+          // Lazily import to avoid circular deps at module top-level in some bundlers
+          const qc = await import("../lib/queryClientInstance");
+          try { qc.queryClient.clear(); } catch (e) { console.debug('[Auth] logout: queryClient.clear failed', e); }
+        } catch (e) { console.debug('[Auth] logout: queryClient import failed', e); }
+
+        // Attempt to clear service worker caches to avoid stale cached routes/resources
+        try {
+          if (typeof window !== 'undefined' && 'caches' in window) {
+            const keys = await caches.keys().catch(() => [] as string[]);
+            await Promise.all(keys.map((k) => caches.delete(k).catch(() => false))).catch(() => {});
+          }
+  try { navigator.serviceWorker?.controller?.postMessage?.({ type: 'AUTH_LOGOUT' }); } catch (e) { console.debug('[Auth] logout: sw postMessage failed', e); }
+        } catch (e) { console.debug('[Auth] logout: clearing caches failed', e); }
+
+        setAuth({ booting: false, isAuthenticated: false, role: null, authChecked: true });
   try { window.dispatchEvent(new CustomEvent('auth:logout')); } catch (e) { console.debug('[Auth] logout dispatch failed', e); }
   // Ensure we land on the login page and avoid any SPA boot redirect to /courses.
   try { window.location.replace('/login'); } catch { try { navigate('/login', { replace: true }); } catch { /* ignore */ } }
@@ -377,7 +397,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       saveTokens(tokens);
   } catch (e) { console.debug('[Auth] login role fetch failed', e); }
     const finalRole = roleArg ?? getRoleFromToken();
-    setAuth({ booting: false, isAuthenticated: true, role: finalRole });
+  setAuth({ booting: false, isAuthenticated: true, role: finalRole, authChecked: true });
   }, []);
 
   // Unified post-auth handler: persist tokens, set auth state, and perform the
@@ -388,6 +408,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AuthCtx>(
     () => ({
       booting,
+  authChecked: Boolean(authChecked),
       isAuthenticated,
       role,
       isTeacher: role === "teacher" || role === "admin",
@@ -401,7 +422,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   setSession,
   postAuth,
     }),
-  [booting, isAuthenticated, role, redirectAfterAuth, login, logout, refreshRole, setSession, postAuth]
+  [booting, isAuthenticated, role, authChecked, redirectAfterAuth, login, logout, refreshRole, setSession, postAuth]
   );
 
   // Maintain pendingTeoCount state so pages can update the navbar badge.

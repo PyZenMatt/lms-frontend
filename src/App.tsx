@@ -45,7 +45,7 @@ function BuyRedirect() {
 }
 
 export default function App() {
-  const { isAuthenticated, booting } = useAuth();
+  const { isAuthenticated, booting, authChecked } = useAuth();
 
   return (
     <>
@@ -64,13 +64,13 @@ export default function App() {
           <Route
             index
             element={
-              booting ? (
-                <div className="p-6 text-sm text-muted-foreground">Verifica sessione</div>
-              ) : isAuthenticated ? (
-                <Navigate to="/courses" replace />
-              ) : (
-                <Navigate to="/login" replace />
-              )
+              !authChecked || booting ? (
+                  <div className="p-6 text-sm text-muted-foreground">Verifica sessione</div>
+                ) : isAuthenticated ? (
+                  <Navigate to="/courses" replace />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
             }
           />
           <Route path="/forbidden" element={<ErrorBoundary><Forbidden /></ErrorBoundary>} />
