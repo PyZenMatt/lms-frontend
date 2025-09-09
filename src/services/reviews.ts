@@ -37,6 +37,10 @@ export type Submission = {
   from_exercise?: boolean
 }
 
+export type AreaItem = { reviewer: { username?: string; name?: string } | null; score?: number; comment?: string | null; [k: string]: unknown }
+export type Area = { key: string; label?: string; avg?: number | null; received: number; expected: number; items: AreaItem[] }
+export type SubmissionDetail = { submission_id: number; reviews: Array<{ reviewer: { username?: string; name?: string } | null; technical: number; creative: number; following: number; strengths_comment?: string | null; suggestions_comment?: string | null; final_comment?: string | null; technical_comment?: string | null; creative_comment?: string | null; following_comment?: string | null; comment?: string | null }> }
+
 function normAssigned(raw: any): AssignedReview {
   const subId = asNumber(
   // prefer explicit submission_pk (returned by backend AssignedReviewsView)
@@ -113,6 +117,36 @@ export async function listAssignedReviews(): Promise<Result<AssignedReview[]>> {
   return { ok: false, status: 404, error: "No assigned reviews endpoint" }
 }
 
+/** Lista delle submissions dell'utente (My Submissions) */
+export async function listMySubmissions(): Promise<Result<any[]>> {
+  const candidates = [`/v1/reviews/my-submissions/`, `/v1/reviews/my_submissions/`]
+  for (const url of candidates) {
+    const res = await api.get<any>(url)
+    if (res.ok) {
+      const payload = res.data
+      const arr = Array.isArray(payload?.items) ? payload.items : (payload?.results ?? [])
+      // Normalize to ensure areas use canonical keys and items have score
+      const normalized = arr.map((it: any) => {
+        const areasRaw: any[] = it?.areas ?? []
+        const areas: Area[] = areasRaw.map((a: any) => ({
+          key: a.key,
+          label: a.label ?? a.title ?? undefined,
+          avg: a.avg ?? null,
+          received: Number(a.received ?? 0),
+          expected: Number(a.expected ?? 0),
+          items: (Array.isArray(a.items) ? a.items : []).map((it2: any) => ({ reviewer: it2.reviewer ?? null, score: Number(it2.score ?? it2.score_raw ?? it2.value ?? 0) })),
+        }))
+        return { ...it, areas }
+      })
+      return { ok: true, status: res.status, data: normalized }
+    }
+    if (![404, 405].includes((res as any).status ?? res.status)) {
+      return { ok: false, status: res.status, error: (res as any).error }
+    }
+  }
+  return { ok: false, status: 404, error: "My submissions endpoint not found" }
+}
+
 /** Storico review effettuate dal reviewer corrente */
 export async function listReviewsHistory(params?: { page?: number; page_size?: number }): Promise<Result<any[]>> {
   const candidates = [`/v1/reviews/history/`, `/v1/reviewer/history/`]
@@ -158,14 +192,77 @@ export async function getSubmission(submissionId: number): Promise<Result<Submis
         let raw = res.data
         if (Array.isArray(raw)) raw = raw[0]
         if (raw && raw.results && Array.isArray(raw.results)) raw = raw.results[0]
-    if (raw && typeof raw === "object") {
+  if (raw && typeof raw === "object") {
           // common embedded submission fields
           const candidate = raw.my_submission ?? raw.submission ?? raw.latest_submission ?? raw.student_submission ?? (Array.isArray(raw.submissions) ? raw.submissions[0] : undefined)
           if (candidate) {
       // ensure exercise_id is populated from nested exercise if present
       if (!candidate.exercise_id && candidate.exercise?.id) candidate.exercise_id = candidate.exercise.id
       if (candidate.exercise_id) endpointCache.set(Number(candidate.exercise_id), "exercise")
-      return { ok: true, status: res.status, data: normSubmission(candidate) }
+      // If the endpoint returned a submission-like object, try to extract reviews text fields
+        if (candidate) {
+        const base = normSubmission(candidate)
+        // pass through detail reviews if present and expose as `reviews` for components
+        // Normalize common alternative keys and ensure area-specific comment keys exist
+        const rawReviews = candidate.reviews ?? candidate.exercise_view?.reviews ?? candidate.results ?? candidate.review_items ?? null
+        if (Array.isArray(rawReviews)) {
+          const reviews = rawReviews.map((r: any) => {
+            const reviewer = r.reviewer ?? r.author ?? r.user ?? null
+            const normalized = {
+              reviewer,
+              technical: Number(r.technical ?? r.technique ?? r.technique_score ?? r.technical_score ?? 0),
+              creative: Number(r.creative ?? r.creativity ?? r.creativity_score ?? 0),
+              following: Number(r.following ?? r.composition ?? r.composition_score ?? 0),
+              // area-specific comment fields (prefer explicit keys, then fallbacks)
+              strengths_comment: r.strengths_comment ?? r.highlights ?? r.highlights_comment ?? null,
+              suggestions_comment: r.suggestions_comment ?? r.suggestions ?? r.suggestions_comment ?? null,
+              final_comment: r.final_comment ?? r.final ?? r.final_comment ?? null,
+              technical_comment: r.technical_comment ?? r.technical_notes ?? r.technique_comment ?? null,
+              creative_comment: r.creative_comment ?? r.creative_notes ?? r.creativity_comment ?? null,
+              following_comment: r.following_comment ?? r.following_notes ?? r.composition_comment ?? null,
+              comment: r.comment ?? r.content ?? r.body ?? null,
+            }
+            return normalized
+          })
+          ;(base as any).reviews = reviews
+          ;(base as any)._reviews = reviews
+        }
+        return { ok: true, status: res.status, data: base }
+      }
+          // NEW: root-level submission detail (e.g., /v1/submissions/:id/)
+          const looksLikeSubmission = !!(
+            (raw as any)?.reviews ||
+            (raw as any)?.exercise ||
+            (raw as any)?.exercise_id ||
+            (raw as any)?.content ||
+            (raw as any)?.text ||
+            (raw as any)?.student
+          )
+          if (looksLikeSubmission) {
+            const base = normSubmission(raw)
+            const rawReviews = (raw as any).reviews ?? (raw as any).exercise_view?.reviews ?? (raw as any).results ?? (raw as any).review_items ?? null
+            if (Array.isArray(rawReviews)) {
+              const reviews = rawReviews.map((r: any) => {
+                const reviewer = r.reviewer ?? r.author ?? r.user ?? null
+                return {
+                  reviewer,
+                  technical: Number(r.technical ?? r.technique ?? r.technique_score ?? r.technical_score ?? 0),
+                  creative: Number(r.creative ?? r.creativity ?? r.creativity_score ?? 0),
+                  following: Number(r.following ?? r.composition ?? r.composition_score ?? 0),
+                  strengths_comment: r.strengths_comment ?? r.highlights ?? r.highlights_comment ?? null,
+                  suggestions_comment: r.suggestions_comment ?? r.suggestions ?? r.suggestions_comment ?? null,
+                  final_comment: r.final_comment ?? r.final ?? r.final_comment ?? null,
+                  technical_comment: r.technical_comment ?? r.technical_notes ?? r.technique_comment ?? null,
+                  creative_comment: r.creative_comment ?? r.creative_notes ?? r.creativity_comment ?? null,
+                  following_comment: r.following_comment ?? r.following_notes ?? r.composition_comment ?? null,
+                  comment: r.comment ?? r.content ?? r.body ?? null,
+                }
+              })
+              ;(base as any).reviews = reviews
+              ;(base as any)._reviews = reviews
+            }
+            return { ok: true, status: res.status, data: base }
+          }
           }
 
           // no embedded submission — attempt to build a synthetic submission from exercise fields
@@ -196,6 +293,53 @@ export async function getSubmission(submissionId: number): Promise<Result<Submis
   return { ok: false, status: lastNotFound, error: "Submission not found" }
 }
 
+/** Get feedback items for a specific submission area (highlights|suggestions|final) */
+export async function getAreaFeedback(submissionId: number, area: string): Promise<Result<any>> {
+  // candidate endpoints: prefer peer-reviews path then fallback to reviews namespace
+  const candidates = [
+    `/v1/peer-reviews/submissions/${submissionId}/feedback?area=${encodeURIComponent(area)}`,
+    `/v1/reviews/submissions/${submissionId}/feedback?area=${encodeURIComponent(area)}`,
+    `/v1/reviews/${submissionId}/feedback?area=${encodeURIComponent(area)}`,
+  ]
+  for (const url of candidates) {
+  const res = await api.get<any>(url)
+    if (res.ok) {
+      // Normalize a few possible shapes into { items: [{ reviewer, comment }, ...] }
+      const raw = res.data
+      let items: any[] = []
+      if (Array.isArray(raw)) {
+        // plain array of items
+        items = raw
+      } else if (Array.isArray(raw.items)) {
+        items = raw.items
+      } else if (Array.isArray(raw.reviews)) {
+        items = raw.reviews
+      } else if (Array.isArray(raw.results)) {
+        items = raw.results
+      } else if (Array.isArray(raw.feedback)) {
+        items = raw.feedback
+      } else if (raw && typeof raw === 'object' && Array.isArray(raw.data)) {
+        items = raw.data
+      }
+
+      // map each item to { reviewer, comment }
+      const mapped = items.map((it: any) => ({
+        reviewer: it.reviewer ?? it.author ?? it.user ?? null,
+        // Only map textual fields into comment. Explicitly ignore `content`
+        // when it contains numeric ratings or non-text payloads. We prefer
+        // `comment`, `text`, `body` and fallback to `feedback` if present.
+        comment: it.comment ?? it.text ?? it.body ?? it.feedback ?? null,
+        // keep originals for debugging and potential future migration
+        _raw: it,
+      }))
+      return { ok: true, status: res.status, data: { items: mapped } }
+    }
+    const status = (res as any).status ?? res.status
+    if (![404, 405].includes(status)) return { ok: false, status, error: (res as any).error }
+  }
+  return { ok: false, status: 404, error: 'Area feedback endpoint not found' }
+}
+
 /** Invio review */
 export async function sendReview(
   submissionId: number,
@@ -213,6 +357,10 @@ export async function sendReview(
   if (typeof payload.technical === "number") body.technical = payload.technical
   if (typeof payload.creative === "number") body.creative = payload.creative
   if (typeof payload.following === "number") body.following = payload.following
+  // Pass through optional per-area textual comments when provided by the frontend
+  if (typeof (payload as any).technical_comment === "string") body.technical_comment = (payload as any).technical_comment
+  if (typeof (payload as any).creative_comment === "string") body.creative_comment = (payload as any).creative_comment
+  if (typeof (payload as any).following_comment === "string") body.following_comment = (payload as any).following_comment
   // recommendations can be an array of up to a few strings
   if (Array.isArray(payload.recommendations) && payload.recommendations.length) body.recommendations = payload.recommendations
   // prefer cached endpoint if available to avoid POSTing to many 404s

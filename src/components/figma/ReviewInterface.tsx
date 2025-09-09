@@ -56,6 +56,9 @@ export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterf
   const [feedback, setFeedback] = useState("")
   const [strengthsHighlight, setStrengthsHighlight] = useState("")
   const [improvementSuggestions, setImprovementSuggestions] = useState("")
+  const [techniqueNotes, setTechniqueNotes] = useState("")
+  const [creativeNotes, setCreativeNotes] = useState("")
+  const [followingNotes, setFollowingNotes] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
@@ -89,7 +92,11 @@ export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterf
       creative: scores.creative || undefined,
       following: scores.instructions || undefined,
       // also send a concise comment combining strengths/suggestions/feedback
-      comment: `${strengthsHighlight.trim()}\n\nSuggestions:\n${improvementSuggestions.trim()}\n\nFinal:\n${feedback.trim()}`.trim(),
+  comment: `${strengthsHighlight.trim()}\n\nSuggestions:\n${improvementSuggestions.trim()}\n\nFinal:\n${feedback.trim()}`.trim(),
+  // New per-area textual fields (optional): prefer these on backend
+  technical_comment: techniqueNotes?.trim() || undefined,
+  creative_comment: creativeNotes?.trim() || undefined,
+  following_comment: followingNotes?.trim() || undefined,
       recommendations: [],
     }
     // send the review (best-effort, endpoint discovery is handled in service)
@@ -206,6 +213,16 @@ export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterf
                 onChange={(e) => setStrengthsHighlight(e.target.value)}
                 className="min-h-24"
               />
+              <div className="mt-2">
+                <Label htmlFor="technique-notes">Note Technique (optional)</Label>
+                <Textarea
+                  id="technique-notes"
+                  placeholder="Optional: specific notes about technique"
+                  value={techniqueNotes}
+                  onChange={(e) => setTechniqueNotes(e.target.value)}
+                  className="min-h-20"
+                />
+              </div>
               <div className="flex items-center justify-between text-xs">
                 <span className={strengthsHighlight.length >= 20 ? "text-green-600" : "text-muted-foreground"}>
                   {strengthsHighlight.length} characters (minimum 20)
@@ -241,6 +258,16 @@ export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterf
                 onChange={(e) => setImprovementSuggestions(e.target.value)}
                 className="min-h-24"
               />
+              <div className="mt-2">
+                <Label htmlFor="creative-notes">Note Creative (optional)</Label>
+                <Textarea
+                  id="creative-notes"
+                  placeholder="Optional: notes about creative choices"
+                  value={creativeNotes}
+                  onChange={(e) => setCreativeNotes(e.target.value)}
+                  className="min-h-20"
+                />
+              </div>
               <div className="flex items-center justify-between text-xs">
                 <span className={improvementSuggestions.length >= 20 ? "text-green-600" : "text-muted-foreground"}>
                   {improvementSuggestions.length} characters (minimum 20)
@@ -276,6 +303,16 @@ export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterf
                 onChange={(e) => setFeedback(e.target.value)}
                 className="min-h-24"
               />
+              <div className="mt-2">
+                <Label htmlFor="following-notes">Note Following (optional)</Label>
+                <Textarea
+                  id="following-notes"
+                  placeholder="Optional: notes about following instructions / requirements"
+                  value={followingNotes}
+                  onChange={(e) => setFollowingNotes(e.target.value)}
+                  className="min-h-20"
+                />
+              </div>
               <div className="flex items-center justify-between text-xs">
                 <span className={feedback.length >= 20 ? "text-green-600" : "text-muted-foreground"}>
                   {feedback.length} characters (minimum 20)

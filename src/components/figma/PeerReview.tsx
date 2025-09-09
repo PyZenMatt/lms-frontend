@@ -5,10 +5,12 @@ import { Button } from "./ui/button"
 import { Avatar, AvatarFallback } from "./ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 // removed unused UI imports; ReviewInterface owns the form UI
-import { Upload, Star, Eye, Award, Users, Sparkles } from "lucide-react"
+import { Upload, Eye, Award, Users, Sparkles } from "lucide-react"
 import { ImageWithFallback } from "./figma/ImageWithFallback"
 import { ReviewInterface } from "./ReviewInterface"
-import { listAssignedReviews, getSubmission, type AssignedReview, type Submission as ReviewSubmission } from "../../services/reviews"
+import { listAssignedReviews, getSubmission, listMySubmissions, type AssignedReview, type Submission as ReviewSubmission } from "../../services/reviews"
+import { MySubmissions } from "./MySubmissions"
+import { FeedbackReceived } from "./FeedbackReceived"
 import React from "react"
 
 interface UISubmission {
@@ -26,6 +28,9 @@ interface UISubmission {
 export function PeerReview() {
   const [currentView, setCurrentView] = useState<'list' | 'reviewing'>('list')
   const [selectedSubmission, setSelectedSubmission] = useState<UISubmission | null>(null)
+  const [activeTab, setActiveTab] = React.useState<string>('review-others')
+  const [selectedSubmissionForFeedback, setSelectedSubmissionForFeedback] = React.useState<number | null>(null)
+  // selectedSubmissionId reserved for future drawer linking
 
   const [assigned, setAssigned] = React.useState<AssignedReview[]>([])
   const [loadingAssigned, setLoadingAssigned] = React.useState(false)
@@ -114,7 +119,7 @@ export function PeerReview() {
         </div>
       </div>
 
-      <Tabs defaultValue="review-others" className="space-y-6">
+  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)} className="space-y-6">
         <TabsList>
           <TabsTrigger value="review-others">Review Others</TabsTrigger>
           <TabsTrigger value="my-submissions">My Submissions</TabsTrigger>
@@ -185,139 +190,12 @@ export function PeerReview() {
           </div>
         </TabsContent>
 
+        <TabsContent value="my-submissions" className="space-y-4">
+          <MySubmissions onOpenFeedback={(id: number) => { setActiveTab('feedback-received'); setSelectedSubmissionForFeedback(id); }} />
+        </TabsContent>
+
         <TabsContent value="feedback-received" className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <ImageWithFallback 
-                  src="https://images.unsplash.com/photo-1578228406113-77951bb64eff?w=60&h=60&fit=crop&crop=center"
-                  alt="Light and shadow study"
-                  className="size-12 rounded-lg object-cover"
-                />
-                <div className="flex-1">
-                  <p className="font-medium">Light & Shadow Study</p>
-                  <p className="text-sm text-muted-foreground">Digital Painting Fundamentals • Lesson 2</p>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`size-3 ${i < 4 ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground">4.2 average</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Review 1 */}
-              <div className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Avatar className="size-8">
-                    <AvatarFallback>R1</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Anonymous Reviewer 1</p>
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`size-3 ${i < 4 ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Technical Skills</p>
-                    <p className="font-medium">4/5</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Creativity</p>
-                    <p className="font-medium">4/5</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Following Brief</p>
-                    <p className="font-medium">5/5</p>
-                  </div>
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm font-medium mb-1">Feedback:</p>
-                  <p className="text-sm text-muted-foreground">"Great work on the shadow casting! Your understanding of light direction is solid. One suggestion: try pushing the contrast more in the darkest shadows to create more dramatic depth. The composition is well thought out."</p>
-                </div>
-              </div>
-
-              {/* Review 2 */}
-              <div className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Avatar className="size-8">
-                    <AvatarFallback>R2</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Anonymous Reviewer 2</p>
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`size-3 ${i < 5 ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Technical Skills</p>
-                    <p className="font-medium">5/5</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Creativity</p>
-                    <p className="font-medium">4/5</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Following Brief</p>
-                    <p className="font-medium">5/5</p>
-                  </div>
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm font-medium mb-1">Feedback:</p>
-                  <p className="text-sm text-muted-foreground">"Excellent attention to detail! Your light source is consistent throughout the piece. I love how you handled the reflected light in the shadows. This shows strong foundational understanding."</p>
-                </div>
-              </div>
-
-              {/* Review 3 */}
-              <div className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Avatar className="size-8">
-                    <AvatarFallback>R3</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Anonymous Reviewer 3</p>
-                    <div className="flex items-center gap-1">
-                      {[...Array(3)].map((_, i) => (
-                        <Star key={i} className="size-3 fill-yellow-400 text-yellow-400" />
-                      ))}
-                      {[...Array(2)].map((_, i) => (
-                        <Star key={i + 3} className="size-3 text-muted-foreground" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Technical Skills</p>
-                    <p className="font-medium">3/5</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Creativity</p>
-                    <p className="font-medium">3/5</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Following Brief</p>
-                    <p className="font-medium">4/5</p>
-                  </div>
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm font-medium mb-1">Feedback:</p>
-                  <p className="text-sm text-muted-foreground">"Good start! The basic light and shadow concepts are there. For improvement, work on smoother gradations between light and shadow areas. Also consider studying more reference photos for realistic shadow behavior."</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <FeedbackReceived selectedSubmissionId={selectedSubmissionForFeedback} />
         </TabsContent>
       </Tabs>
 
