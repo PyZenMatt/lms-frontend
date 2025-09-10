@@ -179,10 +179,14 @@ export function FeedbackDetailDrawer({
             if (ares.ok && Array.isArray(ares.data?.items)) {
             const normalized = (ares.data.items as unknown[]).map((it) => {
               const item = it as Record<string, unknown>
-              // If the endpoint returned area-specific comment field, use it; do NOT fallback to blob fields here for the three vote areas
+              // If the endpoint returned area-specific comment field, prefer it;
+              // but FALLBACK to generic comment/text/body if area-specific field is missing.
               const areaField = areaKey ? `${String(areaKey)}_comment` : 'comment'
               const direct = (item[areaField] as string) ?? null
-              const commentText = typeof direct === 'string' && direct.trim() ? direct : null
+              const fallback = (item.comment as string) ?? (item.text as string) ?? (item.body as string) ?? null
+              const commentText = (typeof direct === 'string' && direct.trim())
+                ? direct.trim()
+                : (typeof fallback === 'string' && fallback.trim() ? fallback.trim() : null)
               return ({ ...item, [areaField]: commentText ?? null, comment: commentText ?? null } as Review)
             })
             setAreaItems(normalized)
@@ -280,7 +284,8 @@ export function FeedbackDetailDrawer({
     if (Array.isArray(areaItems) && areaItems.length > 0) {
       return (areaItems as Review[]).map((it) => ({
         reviewer: it.reviewer ?? undefined,
-        comment: pickRaw(it, `${key}_comment`, `${key}_text`) || ""
+        // include generic fields as fallback when area-specific ones are missing
+        comment: pickRaw(it, `${key}_comment`, `${key}_text`, 'comment', 'text', 'body') || ""
       })).filter(it => it.comment && String(it.comment).trim())
     }
     // fallback: use only per-area fields from reviews; do NOT parse blob for vote areas

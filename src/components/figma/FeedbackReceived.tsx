@@ -26,7 +26,7 @@ export function FeedbackReceived({ selectedSubmissionId }: { selectedSubmissionI
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [openSubmission, setOpenSubmission] = React.useState<number | null>(null)
-  const [openDetail, setOpenDetail] = React.useState<{ submissionId: number } | null>(null)
+  const [openDetail, setOpenDetail] = React.useState<{ submissionId: number; area?: string } | null>(null)
 
   React.useEffect(() => {
     if (selectedSubmissionId) setOpenSubmission(selectedSubmissionId)
@@ -97,8 +97,15 @@ export function FeedbackReceived({ selectedSubmissionId }: { selectedSubmissionI
                       })}
                     </div>
 
-                    {/* Single CTA per submission: opens aggregated feedback drawer */}
-                    {/** Render the CTA in the card footer outside the area loop to avoid duplicates */}
+                    {/* Per-area CTA: opens single-area feedback drawer */}
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        className="text-sm underline"
+                        onClick={() => setOpenDetail({ submissionId: it.submission_id, area: String(mapAreaField(area.key)) })}
+                      >
+                        View all
+                      </button>
+                    </div>
                   </div>
                 ))}
               </CardContent>
@@ -123,6 +130,7 @@ export function FeedbackReceived({ selectedSubmissionId }: { selectedSubmissionI
         <FeedbackDetailDrawer
           submissionId={openDetail.submissionId}
           open={true}
+          area={openDetail.area}
           onClose={() => setOpenDetail(null)}
         />
       )}
