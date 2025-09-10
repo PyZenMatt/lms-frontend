@@ -7,7 +7,7 @@ type N = {
   id: number | string;
   title?: string | null;
   message?: string | null;
-  is_read?: boolean;
+  read?: boolean;
   created_at?: string | null;
   notification_type?: string;
   absorption_id?: number | null;
@@ -20,10 +20,11 @@ type N = {
 type Props = {
   item: N;
   onMarkRead?: (id: N["id"]) => void;
+  onDelete?: (id: N["id"]) => void;
 };
 
-export default function NotificationItem({ item, onMarkRead }: Props) {
-  const isRead = !!item.is_read;
+export default function NotificationItem({ item, onMarkRead, onDelete }: Props) {
+  const isRead = !!item.read;
   const created = item.created_at ? new Date(item.created_at) : null;
   // decision ids will be handled by the TeacherDecisionNav in the navbar
 
@@ -47,14 +48,25 @@ export default function NotificationItem({ item, onMarkRead }: Props) {
             TEO offerti: <span className="font-mono">{item.offered_teacher_teo}</span>
           </p>
         )}
-        {!isRead && onMarkRead && (
-          <div className="mt-3">
-            <button
-              onClick={() => onMarkRead(item.id)}
-              className="inline-flex h-8 items-center rounded-md border px-2 text-xs hover:bg-accent"
-            >
-              Segna come letta
-            </button>
+        {(onMarkRead || onDelete) && (
+          <div className="mt-3 flex items-center gap-2">
+            {!isRead && onMarkRead && (
+              <button
+                onClick={() => onMarkRead(item.id)}
+                className="inline-flex h-8 items-center rounded-md border px-2 text-xs hover:bg-accent"
+              >
+                Segna come letta
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(item.id)}
+                aria-label="Elimina notifica"
+                className="inline-flex h-8 items-center rounded-md border px-2 text-xs text-destructive hover:bg-red-50"
+              >
+                Elimina
+              </button>
+            )}
           </div>
         )}
   {/* Deep-link removed: decisions are handled via TeacherDecisionNav in the navbar */}

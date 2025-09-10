@@ -11,7 +11,8 @@ export type NotificationItem = {
   id: number | string;
   title?: string | null;
   message?: string | null;
-  is_read?: boolean;
+  // Normalized field: use `read` across the FE. Backend may also send `is_read`.
+  read?: boolean;
   created_at?: string | null;
   notification_type?: string;
   absorption_id?: number | null;
