@@ -46,25 +46,30 @@ export function AreaFeedbackDrawer({ submissionId, area, initialItems, open, onC
         {loading ? <div>Loading…</div> : error ? <div className="text-rose-600">{error}</div> : (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => {
-              const it = items[i]
-              if (!it) return (
+              const raw = items[i]
+              if (!raw) return (
                 <Card key={i}>
                   <CardContent className="text-sm text-muted-foreground">Empty slot — waiting for reviewer</CardContent>
                 </Card>
               )
+              const it = raw as Record<string, unknown>
+              const areaKey = String(area)
+              const areaComment = (it[`${areaKey}_comment`] as string) ?? (it[`${areaKey}_text`] as string) ?? null
+              const fallback = (it.content as string) ?? (it.comment as string) ?? (it.comment_text as string) ?? ''
+              const display = (typeof areaComment === 'string' && areaComment.trim()) ? areaComment : fallback
               return (
-                    <Card key={it.review_id ?? i}>
+                <Card key={(it.review_id as string) ?? i}>
                   <CardHeader>
                     <div className="flex items-center gap-3">
-                      <Avatar><AvatarFallback>{(it.reviewer?.name ?? 'R').slice(0,2)}</AvatarFallback></Avatar>
+                      <Avatar><AvatarFallback>{(it.reviewer as any)?.name ?? 'R'}</AvatarFallback></Avatar>
                       <div>
-                        <div className="font-medium">{it.reviewer?.name ?? it.reviewer?.username ?? 'Reviewer'}</div>
-                        <div className="text-xs text-muted-foreground">{new Date(it.created_at ?? '').toLocaleString()}</div>
+                        <div className="font-medium">{(it.reviewer as any)?.name ?? (it.reviewer as any)?.username ?? 'Reviewer'}</div>
+                        <div className="text-xs text-muted-foreground">{new Date((it.created_at as string) ?? '').toLocaleString()}</div>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-sm text-muted-foreground whitespace-pre-wrap">{it.content ?? it.comment ?? it.comment_text ?? ''}</div>
+                    <div className="text-sm text-muted-foreground whitespace-pre-wrap">{display}</div>
                   </CardContent>
                 </Card>
               )

@@ -25,7 +25,12 @@ export default function ReviewSubmission() {
   const [technical, setTechnical] = React.useState<number | "">("")
   const [creative, setCreative] = React.useState<number | "">("")
   const [following, setFollowing] = React.useState<number | "">("")
+  // Legacy single blob comment (kept for backward compatibility only)
   const [comment, setComment] = React.useState<string>("")
+  // New per-area textual feedback fields (sent as snake_case to backend)
+  const [technicalComment, setTechnicalComment] = React.useState<string>("")
+  const [creativeComment, setCreativeComment] = React.useState<string>("")
+  const [followingComment, setFollowingComment] = React.useState<string>("")
   const [submitting, setSubmitting] = React.useState(false)
   const [submittedMsg, setSubmittedMsg] = React.useState<string | null>(null)
 
@@ -85,19 +90,26 @@ export default function ReviewSubmission() {
       return
     }
     // If reviewer provided the 3 sub-scores (1-5) prefer sending them
-    let payload: any
-    if (tech && creat && foll) {
-      // send breakdown fields (backend will compute legacy score)
+  let payload: Record<string, unknown>
+    if (tech !== undefined && creat !== undefined && foll !== undefined) {
+      // send breakdown fields (backend will compute legacy score) and per-area comments
       payload = {
         technical: tech,
         creative: creat,
         following: foll,
-        comment: comment?.trim() || undefined,
+        // include per-area textual feedback in snake_case as backend expects
+        technical_comment: technicalComment?.trim() || undefined,
+        creative_comment: creativeComment?.trim() || undefined,
+        following_comment: followingComment?.trim() || undefined,
+        // do NOT send the legacy blob comment when breakdowns are used
       }
     } else {
+      // fallback to legacy score + optional single comment
       payload = { score: numericScore, comment: comment?.trim() || undefined }
     }
-    const res = await sendReview(submissionId, payload, exerciseId)
+  // debug: log payload to verify snake_case fields are present
+  console.debug?.("[ReviewSubmission] payload ->", payload)
+  const res = await sendReview(submissionId, payload)
     setSubmitting(false)
     if (!res.ok) {
       setError(`Invio review non riuscito (HTTP ${res.status}). Probabilmente il backend non espone un endpoint per la submission. (${res.error ?? ""})`)
@@ -192,12 +204,41 @@ export default function ReviewSubmission() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium">Commento</label>
+              <label className="mb-1 block text-sm font-medium">Technique — feedback</label>
+              <textarea
+                value={technicalComment}
+                onChange={(e) => setTechnicalComment(e.target.value)}
+                placeholder="Feedback specifico sulla tecnica (es: struttura, correttezza, algoritmi)..."
+                className="min-h-[80px] w-full rounded-lg border p-3 mb-3"
+                disabled={submitting || !!submittedMsg}
+              />
+
+              <label className="mb-1 block text-sm font-medium">Creative — feedback</label>
+              <textarea
+                value={creativeComment}
+                onChange={(e) => setCreativeComment(e.target.value)}
+                placeholder="Feedback sulla creatività (es: soluzioni alternative, stile)..."
+                className="min-h-[80px] w-full rounded-lg border p-3 mb-3"
+                disabled={submitting || !!submittedMsg}
+              />
+
+              <label className="mb-1 block text-sm font-medium">Following/Composition — feedback</label>
+              <textarea
+                value={followingComment}
+                onChange={(e) => setFollowingComment(e.target.value)}
+                placeholder="Feedback sulla composizione / follow-up (es: coerenza, leggibilità)..."
+                className="min-h-[80px] w-full rounded-lg border p-3 mb-3"
+                disabled={submitting || !!submittedMsg}
+              />
+
+              {/* Legacy single comment kept for fallback if user prefers a final blob */}
+              <label className="mb-1 block text-sm font-medium">Commento (opzionale finale)</label>
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Spiega al candidato i punti di forza e cosa migliorare…"
-                className="min-h-[120px] w-full rounded-lg border p-3"
+                className="min-h-[80px] w-full rounded-lg border p-3"
+                disabled={submitting || !!submittedMsg}
               />
             </div>
 

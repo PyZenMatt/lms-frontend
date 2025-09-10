@@ -220,7 +220,6 @@ export async function getSubmission(submissionId: number): Promise<Result<Submis
               technical_comment: r.technical_comment ?? r.technical_notes ?? r.technique_comment ?? null,
               creative_comment: r.creative_comment ?? r.creative_notes ?? r.creativity_comment ?? null,
               following_comment: r.following_comment ?? r.following_notes ?? r.composition_comment ?? null,
-              comment: r.comment ?? r.content ?? r.body ?? null,
             }
             return normalized
           })
@@ -255,7 +254,6 @@ export async function getSubmission(submissionId: number): Promise<Result<Submis
                   technical_comment: r.technical_comment ?? r.technical_notes ?? r.technique_comment ?? null,
                   creative_comment: r.creative_comment ?? r.creative_notes ?? r.creativity_comment ?? null,
                   following_comment: r.following_comment ?? r.following_notes ?? r.composition_comment ?? null,
-                  comment: r.comment ?? r.content ?? r.body ?? null,
                 }
               })
               ;(base as any).reviews = reviews
@@ -325,11 +323,9 @@ export async function getAreaFeedback(submissionId: number, area: string): Promi
       // map each item to { reviewer, comment }
       const mapped = items.map((it: any) => ({
         reviewer: it.reviewer ?? it.author ?? it.user ?? null,
-        // Only map textual fields into comment. Explicitly ignore `content`
-        // when it contains numeric ratings or non-text payloads. We prefer
-        // `comment`, `text`, `body` and fallback to `feedback` if present.
-        comment: it.comment ?? it.text ?? it.body ?? it.feedback ?? null,
-        // keep originals for debugging and potential future migration
+        // Only accept explicit `comment` provided by the backend for this area.
+        // Do NOT fallback to blob-like fields such as text/body/feedback here.
+        comment: it.comment ?? null,
         _raw: it,
       }))
       return { ok: true, status: res.status, data: { items: mapped } }
@@ -343,7 +339,18 @@ export async function getAreaFeedback(submissionId: number, area: string): Promi
 /** Invio review */
 export async function sendReview(
   submissionId: number,
-  payload: { score?: number; decision?: string; comment?: string; technical?: number; creative?: number; following?: number; recommendations?: string[] },
+  payload: { 
+    score?: number; 
+    decision?: string; 
+    comment?: string; 
+    technical?: number; 
+    creative?: number; 
+    following?: number; 
+    recommendations?: string[];
+    technical_comment?: string;
+    creative_comment?: string;
+    following_comment?: string;
+  },
   exerciseId?: number
 ): Promise<Result<any>> {
   const body: any = {
@@ -368,15 +375,13 @@ export async function sendReview(
   const makePaths = () => {
     const base = [] as string[]
     const hint = endpointCache.get(submissionId)
-    if (exerciseId) base.push(`/v1/exercises/${exerciseId}/review/`)
-    // If we know this id is a submission, try submission route first
-    if (hint === "submission") {
-      base.push(`/v1/submissions/${submissionId}/review/`)
-      base.push(`/v1/exercises/${submissionId}/review/`)
-    } else {
-      base.push(`/v1/exercises/${submissionId}/review/`)
-      base.push(`/v1/submissions/${submissionId}/review/`)
-    }
+  // Prefer the submission-scoped review route to avoid ambiguous exercise-scoped posts.
+  // Include a legacy/course-scoped path used by some backends as well.
+  base.push(`/v1/submissions/${submissionId}/review/`)
+  base.push(`/v1/courses/submissions/${submissionId}/review/`)
+  // still allow exercise-scoped endpoints as a fallback (either provided exerciseId or using the id)
+  if (exerciseId) base.push(`/v1/exercises/${exerciseId}/review/`)
+  base.push(`/v1/exercises/${submissionId}/review/`)
     base.push(`/v1/reviews/${submissionId}/submit/`)
     base.push(`/v1/reviews/${submissionId}/`)
     return base

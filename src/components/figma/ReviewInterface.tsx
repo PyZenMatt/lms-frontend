@@ -87,18 +87,44 @@ export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterf
   const handleSubmitReview = () => {
     if (submitting || submitted) return
     setSubmitting(true)
-    const payload = {
-      technical: scores.technical || undefined,
-      creative: scores.creative || undefined,
-      following: scores.instructions || undefined,
-      // also send a concise comment combining strengths/suggestions/feedback
-  comment: `${strengthsHighlight.trim()}\n\nSuggestions:\n${improvementSuggestions.trim()}\n\nFinal:\n${feedback.trim()}`.trim(),
-  // New per-area textual fields (optional): prefer these on backend
-  technical_comment: techniqueNotes?.trim() || undefined,
-  creative_comment: creativeNotes?.trim() || undefined,
-  following_comment: followingNotes?.trim() || undefined,
-      recommendations: [],
+    // Validate breakdown: require all three ratings to be present and within 1..5
+    const hasAllBreakdown = [scores.technical, scores.creative, scores.instructions].every(v => typeof v === 'number' && v >= 1 && v <= 5)
+    if (!hasAllBreakdown) {
+      // Block submit if breakdown is incomplete — frontend should send all three or none
+      toast.error?.("Please provide all three ratings (1–5) before submitting the detailed review")
+      setSubmitting(false)
+      return
     }
+
+  const payload: Record<string, unknown> = {
+      technical: Number(scores.technical),
+      creative: Number(scores.creative),
+      following: Number(scores.instructions),
+      // Map the three mandatory texts to per-area comment fields
+      technical_comment: strengthsHighlight.trim(),
+      creative_comment: improvementSuggestions.trim(),
+      following_comment: feedback.trim(),
+      // Optional: include Note fields as additive content if provided
+      // (Alternative: you could concatenate them to the main comments above)
+    }
+    
+    // Add optional technique notes if provided
+    if (techniqueNotes && techniqueNotes.trim().length > 0) {
+      payload.technical_comment = `${strengthsHighlight.trim()}\n\nNote: ${techniqueNotes.trim()}`
+    }
+    
+    // Add optional creative notes if provided
+    if (creativeNotes && creativeNotes.trim().length > 0) {
+      payload.creative_comment = `${improvementSuggestions.trim()}\n\nNote: ${creativeNotes.trim()}`
+    }
+    
+    // Add optional following notes if provided
+    if (followingNotes && followingNotes.trim().length > 0) {
+      payload.following_comment = `${feedback.trim()}\n\nNote: ${followingNotes.trim()}`
+    }
+    
+    // Recommendations array (kept for compatibility)
+    payload.recommendations = []
     // send the review (best-effort, endpoint discovery is handled in service)
     ;(async () => {
       try {

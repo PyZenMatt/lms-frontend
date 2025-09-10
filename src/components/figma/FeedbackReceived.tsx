@@ -26,7 +26,7 @@ export function FeedbackReceived({ selectedSubmissionId }: { selectedSubmissionI
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [openSubmission, setOpenSubmission] = React.useState<number | null>(null)
-  const [openDetail, setOpenDetail] = React.useState<{ submissionId: number; areaKey: string } | null>(null)
+  const [openDetail, setOpenDetail] = React.useState<{ submissionId: number } | null>(null)
 
   React.useEffect(() => {
     if (selectedSubmissionId) setOpenSubmission(selectedSubmissionId)
@@ -97,19 +97,19 @@ export function FeedbackReceived({ selectedSubmissionId }: { selectedSubmissionI
                       })}
                     </div>
 
-                    <div className="mt-3">
-                      <button
-                        className="text-sm underline"
-                        onClick={() =>
-                          setOpenDetail({ submissionId: it.submission_id, areaKey: mapAreaField(area.key) })
-                        }
-                      >
-                        View all
-                      </button>
-                    </div>
+                    {/* Single CTA per submission: opens aggregated feedback drawer */}
+                    {/** Render the CTA in the card footer outside the area loop to avoid duplicates */}
                   </div>
                 ))}
               </CardContent>
+              <div className="p-3 border-t flex justify-end">
+                <button
+                  className="text-sm underline"
+                  onClick={() => setOpenDetail({ submissionId: it.submission_id })}
+                >
+                  View feedback
+                </button>
+              </div>
             </Card>
           ))}
         </div>
@@ -122,7 +122,6 @@ export function FeedbackReceived({ selectedSubmissionId }: { selectedSubmissionI
       {openDetail && (
         <FeedbackDetailDrawer
           submissionId={openDetail.submissionId}
-          area={openDetail.areaKey}
           open={true}
           onClose={() => setOpenDetail(null)}
         />
