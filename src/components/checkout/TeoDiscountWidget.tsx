@@ -28,6 +28,13 @@ export default function TeoDiscountWidget({ priceEUR, courseId, onApply, onRefre
   const [checking, setChecking] = useState(false);
   // options are fixed TEO amounts the user can spend
   const options = [5, 10, 15];
+  
+  // IDEMPOTENCY: Persistent checkout session ID for entire discount flow
+  const [checkoutSessionId] = useState<string>(() => {
+    // Generate a stable session ID that persists for the component lifecycle
+    // This prevents duplicate discounts when clicking "Apply" multiple times
+    return `checkout_session_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+  });
   // TEO per 1 EUR (frontend config via Vite). Only use if explicitly provided by env/window.
   // Do NOT assume a default conversion rate here; showing TEO without a known rate
   // may confuse users (and previously caused 1:1 or 1:10 mixups).
@@ -50,6 +57,7 @@ export default function TeoDiscountWidget({ priceEUR, courseId, onApply, onRefre
     // If price, course or selected percent change, clear previous check/apply result to avoid stale teo_required
     setResult(null);
     setApplied(false);
+    setApplying(false); // Reset applying state when selection changes
   }, [priceEUR, selectedPct, courseId]);
 
   useEffect(() => {
@@ -148,7 +156,8 @@ export default function TeoDiscountWidget({ priceEUR, courseId, onApply, onRefre
           }
 
           const payload: Record<string, unknown> = {
-            order_id: `local_${Date.now()}`,
+            order_id: checkoutSessionId, // IDEMPOTENCY: Reuse same session ID
+            checkout_session_id: checkoutSessionId, // Explicit field for backend
             course_id: courseId,
             price_eur: priceEUR,
             discount_percent: derivedDiscountPercent,
@@ -240,6 +249,13 @@ export default function TeoDiscountWidget({ priceEUR, courseId, onApply, onRefre
           onApply(final, discountComputed, detailsWithSnapshot)
           setApplied(true)
           setError(null)
+          
+          // Check if this was an idempotent response (existing snapshot reused)
+          const responseData = conf.data as Record<string, unknown>;
+          if ((responseData?.message as string)?.includes('idempotent') || responseData?.already_exists) {
+            console.debug('[TeoDiscountWidget] Idempotent response detected - discount already applied');
+          }
+          
           // persist a normalized breakdown in local state so it won't be the full wrapper later
           try {
             setResult((r) => ({ ...(r ?? {}), _snapshot: conf.data.snapshot ?? null, ...((serverBreakdown && typeof serverBreakdown === 'object') ? serverBreakdown : {}) }))

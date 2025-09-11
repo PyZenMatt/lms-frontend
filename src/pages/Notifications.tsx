@@ -48,19 +48,8 @@ export default function Notifications() {
       setItems([]);
       setCount(undefined);
     } else {
-      // Map decision_id fallback if backend sent only related_object_id
-      const mapped = (res.data as Record<string, unknown>[]).map((it) => {
-        const rec = it as Record<string, unknown>;
-        if (
-          rec &&
-          rec["notification_type"] === "teocoin_discount_pending" &&
-          (rec["decision_id"] === undefined || rec["decision_id"] === null) &&
-          (typeof rec["related_object_id"] === "number")
-        ) {
-          return { ...rec, decision_id: rec["related_object_id"] } as Record<string, unknown>;
-        }
-        return rec;
-      });
+  // Backend guarantees `decision_id` and `discount_eur`; do not infer decision_id from related_object_id.
+  const mapped = res.data as Record<string, unknown>[];
       console.debug("[Notifications] loaded", { count: mapped.length, sample: mapped[0] });
       setItems(mapped as N[]);
       setCount(res.count);
@@ -157,6 +146,43 @@ export default function Notifications() {
     load(nx);
   }
 
+  // Collapse pending + urgent notifications by decision_id so teacher sees one row per decision
+  const collapsedItems = React.useMemo(() => {
+    // Group notifications that are of types teocoin_discount_pending or teocoin_discount_pending_urgent by decision_id
+    const byDecision = new Map<number | string, N[]>();
+    const others: N[] = [];
+    for (const it of items) {
+      const isDiscount = it.notification_type === "teocoin_discount_pending" || it.notification_type === "teocoin_discount_pending_urgent";
+      // Use decision_id only; do not infer from related_object_id.
+      const key = it.decision_id ?? null;
+      if (isDiscount && key != null) {
+        const arr = byDecision.get(key) ?? [];
+        arr.push(it);
+        byDecision.set(key, arr);
+      } else {
+        others.push(it);
+      }
+    }
+    const merged: N[] = [];
+    // For each grouped decision, prefer the most recent item and mark urgent if present
+  for (const arr of byDecision.values()) {
+      // pick most recent by created_at
+      const sorted = arr.slice().sort((a, b) => {
+        const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return tb - ta;
+      });
+      const primary = { ...sorted[0] } as N & { is_urgent?: boolean };
+      // if any item is urgent, set flag
+      if (arr.some((x) => x.notification_type === "teocoin_discount_pending_urgent")) {
+        primary.is_urgent = true;
+      }
+      merged.push(primary);
+    }
+    // Append non-discount notifications afterwards preserving order
+    return [...merged, ...others];
+  }, [items]);
+
   return (
     <section className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -199,15 +225,15 @@ export default function Notifications() {
       )}
 
       <div className="space-y-3">
-        {items.map((it) => (
+        {collapsedItems.map((it) => (
           <div key={it.id}>
             <NotificationItem item={it} onMarkRead={onMarkRead} onDelete={onDelete} />
-            {/* If this notification is a teocoin discount pending, allow opening the decision panel */}
-            {it.notification_type === "teocoin_discount_pending" && ((it.decision_id as number) || (it as unknown as Record<string, unknown>)["related_object_id"]) && (
+            {/* If this notification references a decision, show the open-decision button. Use decision_id directly. */}
+            {(it.decision_id as number) && (
               <div className="mt-2 flex items-center gap-2">
                 <button
                   onClick={() => {
-                    const id = (it.decision_id as number) ?? ((it as unknown as Record<string, unknown>)["related_object_id"] as number) ?? null;
+                    const id = (it.decision_id as number) ?? null;
                     if (id) setSelectedDecisionId(Number(id));
                   }}
                   className="inline-flex h-8 items-center rounded-md border px-2 text-xs hover:bg-accent"

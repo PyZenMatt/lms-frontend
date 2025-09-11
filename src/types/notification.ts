@@ -18,6 +18,10 @@ export type NotificationItem = {
   absorption_id?: number | null;
   decision_id?: number | null;
   offered_teacher_teo?: string | null;
+  // Backend provides canonical euro amount for teocoin discounts
+  discount_eur?: number | null;
+  // Optional flag set when a discount notification is urgent
+  is_urgent?: boolean | null;
   // Allow any additional fields from backend
   [key: string]: unknown;
 }

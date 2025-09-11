@@ -94,15 +94,8 @@ export async function getNotifications(query?: { page?: number; page_size?: numb
     if (item.read === undefined && typeof raw["is_read"] === "boolean") {
       item.read = raw["is_read"] as boolean;
     }
-    // decision id fallback
-    if (item.notification_type === "teocoin_discount_pending" && (item.decision_id === undefined || item.decision_id === null)) {
-      const typ = (raw["related_object_type"] || raw["related_type"] || raw["relatedModel"]) as string | undefined;
-      const isDecision = typeof typ === "string" && typ.includes("TeacherDiscountDecision");
-      const relId = raw["related_object_id"] as unknown;
-      if (isDecision && typeof relId === "number") {
-        item.decision_id = relId as number;
-      }
-    }
+  // Backend now guarantees `decision_id` and `discount_eur` for teocoin_discount_pending.
+  // Do not attempt to infer decision_id from related_object_id to avoid duplicates.
     return item;
   });
   return { ...norm, data: mapped } as ListResponse;
