@@ -58,10 +58,11 @@ function normalizeList(payload: AnyList): ListResponse {
 }
 
 export async function getUnreadCount(): Promise<number> {
-  const res = await api.get<number | { count?: number; unread_count?: number }>("/v1/notifications/unread-count/");
+  const res = await api.get<number | { count?: number; unread_count?: number; unread?: number }>("/v1/notifications/unread-count/");
   if (!res.ok) return 0;
-  const d = res.data as number | { count?: number; unread_count?: number } | undefined;
+  const d = res.data as number | { count?: number; unread_count?: number; unread?: number } | undefined;
   if (typeof d === "number") return d;
+  if (typeof d?.unread === "number") return d.unread;
   if (typeof d?.count === "number") return d.count;
   if (typeof d?.unread_count === "number") return d.unread_count;
   return 0;
@@ -85,16 +86,16 @@ export async function getNotifications(query?: { page?: number; page_size?: numb
   }
 
   // Map decision_id fallback for teocoin_discount_pending
-  const mapped = (norm.data as NotificationItem[]).map((item) => {
-    if (!item || item.notification_type !== "teocoin_discount_pending") return item;
-    if (item.decision_id != null) return item;
-    const anyItem = item as unknown as Record<string, unknown>;
-    const typ = (anyItem["related_object_type"] || anyItem["related_type"] || anyItem["relatedModel"]) as string | undefined;
-    const isDecision = typeof typ === "string" && typ.includes("TeacherDiscountDecision");
-    const relId = (anyItem["related_object_id"]) as unknown;
-    if (isDecision && typeof relId === "number") {
-      return { ...item, decision_id: relId };
+  // Normalize read/is_read -> read and apply decision_id fallback
+  const mapped = (norm.data as NotificationItem[]).map((rawItem) => {
+    const raw = rawItem as Record<string, unknown>;
+    const item: NotificationItem = { ...rawItem };
+    // Backend may send `is_read` or `read`. Prefer `read`.
+    if (item.read === undefined && typeof raw["is_read"] === "boolean") {
+      item.read = raw["is_read"] as boolean;
     }
+  // Backend now guarantees `decision_id` and `discount_eur` for teocoin_discount_pending.
+  // Do not attempt to infer decision_id from related_object_id to avoid duplicates.
     return item;
   });
   return { ...norm, data: mapped } as ListResponse;
@@ -136,6 +137,8 @@ export async function declineDecision(decisionId: number) {
 export async function markNotificationRead(id: number | string) {
   // Corpo come da tua implementazione: { read: true }
   const res = await api.patch(`/v1/notifications/${id}/read/`, { read: true });
+  // Notify local subscribers so UI can update (bell, lists)
+  if (res.ok) notifyUpdated();
   return res;
 }
 
@@ -144,8 +147,36 @@ export async function markNotificationRead(id: number | string) {
  * In assenza di specifica certa lo lasciamo disabilitato.
  */
 export async function markAllNotificationsRead() {
-  // Placeholder conservativo: restituisce ok=false per evitare false positive in UI
-  return { ok: false as const, status: 405, error: { detail: "Not implemented on backend" } };
+  // Backend: POST /v1/notifications/mark-all-read/
+  try {
+    const res = await api.post(`/v1/notifications/mark-all-read/`);
+    if (res.ok) {
+      notifyUpdated();
+    }
+    return res;
+  } catch (e) {
+    return { ok: false as const, status: 500, error: e } as any;
+  }
+}
+
+export async function deleteNotification(id: number | string) {
+  try {
+    const res = await api.delete(`/v1/notifications/${id}/`);
+    if (res.ok) notifyUpdated();
+    return res;
+  } catch (e) {
+    return { ok: false as const, status: 500, error: e } as any;
+  }
+}
+
+export async function clearAllNotifications() {
+  try {
+    const res = await api.delete(`/v1/notifications/clear-all/`);
+    if (res.ok) notifyUpdated();
+    return res;
+  } catch (e) {
+    return { ok: false as const, status: 500, error: e } as any;
+  }
 }
 
 // Notifica globale per aggiornare il badge nella navbar

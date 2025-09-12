@@ -1,0 +1,95 @@
+name: Agent Guardrails
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+jobs:
+  guardrails:
+    permissions:
+      contents: read
+      pull-requests: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Load policy
+        id: policy
+        run: |
+          echo "POLICY_FILE=.github/.ai/policies/teocoin_hold_settle.yml" >> $GITHUB_ENV
+          test -f .ai/policies/teocoin_hold_settle.yml
+
+      - name: Determine base SHA
+        id: base
+        run: |
+          echo "BASE=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
+
+      - name: Check file scope and counts
+        run: |
+          CHANGED_FILES=$(git diff --name-only $BASE...HEAD)
+          echo "Changed files:"; echo "$CHANGED_FILES"
+          # Enforce allowed paths
+          for f in $CHANGED_FILES; do
+            case "$f" in
+              apps/wallet/*|apps/payments/*|tests/*) : ;;
+              *) echo "::error::File $f is outside allowed_paths"; EXIT=1 ;;
+            esac
+          done
+          # Enforce file count
+          COUNT=$(echo "$CHANGED_FILES" | sed '/^\s*$/d' | wc -l)
+          [ "$COUNT" -le 6 ] || { echo "::error::Too many files ($COUNT > 6)"; EXIT=1; }
+
+          # Enforce LOC delta (added+deleted)
+          LOC=$(git diff --numstat $BASE...HEAD | awk '{a+=$1; d+=$2} END{print a+d+0}')
+          echo "Total LOC changed: $LOC"
+          [ "$LOC" -le 200 ] || { echo "::error::Too many LOC changed ($LOC > 200)"; EXIT=1; }
+
+          exit ${EXIT:-0}
+
+      - name: Python setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt || true
+
+      - name: Run tests (quiet)
+        run: |
+          pytest -q || { echo "::error::Tests failing"; exit 1; }
+
+      - name: Lint
+        run: |
+          pip install ruff
+          ruff check . || { echo "::error::Ruff failing"; exit 1; }
+
+      - name: Soft type-check (optional)
+        run: |
+          pip install mypy
+          mypy --strict || true
+
+            - name: Generate OpenAPI schema (current branch)
+        run: |
+          python manage.py spectacular --file openapi.branch.yaml
+
+      - name: Generate OpenAPI schema (base branch)
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+          git checkout ${{ github.event.pull_request.base.ref }}
+          python -m pip install -r requirements.txt
+          python manage.py spectacular --file openapi.base.yaml || true
+          git checkout -
+
+      - name: Diff OpenAPI schemas
+        run: |
+          # diff semplice; se vuoi, sostituisci con un vero openapi-diff
+          diff -u openapi.base.yaml openapi.branch.yaml || true
+          CHANGES=$(diff -u openapi.base.yaml openapi.branch.yaml | wc -l)
+          if [ "$CHANGES" -gt 0 ]; then
+            echo "::notice::OpenAPI changed ($CHANGES lines)."
+            echo "API change detected; require label 'api-change'." 
+            # Enforce etichetta se preferisci:
+            # exit 1
+          fi
+

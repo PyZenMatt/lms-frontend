@@ -16,6 +16,10 @@ import LessonPage from "./pages/LessonPage"
 import ReviewsAssigned from "./pages/ReviewsAssigned"
 import ReviewSubmission from "./pages/ReviewSubmission"
 import ReviewsHistory from "./pages/ReviewsHistory"
+import Community from "./pages/Community"
+import Gallery from "./pages/Gallery"
+import Discussions from "./pages/Discussions"
+import Achievements from "./pages/Achievements"
 import { ProtectedRoute, RoleRoute } from "./routes/ProtectedRoute";
 import { PeerReview } from "@/components/figma/PeerReview";
 // TeacherChoicesPage removed - use sidebar inbox (TeacherDecisionNav) instead
@@ -192,6 +196,40 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ErrorBoundary><PeerReview /></ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Community / Gallery / Discussions / Achievements */}
+          <Route
+            path="/community"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary><Community /></ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/gallery"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary><Gallery /></ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/discussions"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary><Discussions /></ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/achievements"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary><Achievements /></ErrorBoundary>
               </ProtectedRoute>
             }
           />

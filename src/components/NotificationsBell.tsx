@@ -1,38 +1,26 @@
 // src/components/NotificationsBell.tsx
 import React from "react";
 import { useAuth } from "../context/AuthContext";
-import { API } from "../lib/config";
-import { getAccessToken } from "../lib/auth";
+import { getUnreadCount } from "../services/notifications";
 
 export default function NotificationsBell() {
   const { isAuthenticated } = useAuth();
   const [unread, setUnread] = React.useState<number>(0);
 
   React.useEffect(() => {
-    let abort = false;
-    async function run() {
+    let mounted = true;
+    async function load() {
       if (!isAuthenticated) { setUnread(0); return; }
-      const access = getAccessToken();
-      if (!access) { setUnread(0); return; }
-      try {
-        const res = await fetch(API.notifications.unreadCount, {
-          headers: { Authorization: `Bearer ${access}` },
-        });
-        if (!abort) {
-          if (res.ok) {
-            const data = await res.json();
-            setUnread(Number(data?.unread ?? data?.count ?? 0));
-          } else {
-            // 401/403/altro → degradare a 0 senza rumore
-            setUnread(0);
-          }
-        }
-      } catch {
-        if (!abort) setUnread(0);
-      }
+      const n = await getUnreadCount();
+      if (mounted) setUnread(n);
     }
-    run();
-    return () => { abort = true; };
+    load();
+    const onUpdated = () => {
+      // Quick refetch on any notification update
+      load();
+    };
+    window.addEventListener("notifications:updated", onUpdated as EventListener);
+    return () => { mounted = false; window.removeEventListener("notifications:updated", onUpdated as EventListener); };
   }, [isAuthenticated]);
 
   return (

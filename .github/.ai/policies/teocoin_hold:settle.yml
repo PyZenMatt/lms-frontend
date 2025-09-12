@@ -1,0 +1,47 @@
+name: teocoin_hold_settle
+allowed_paths:
+  - "apps/wallet/**"
+  - "apps/payments/**"
+  - "tests/**"
+  - "!**/migrations/**"
+  - "!**/prod.py"
+  - "!**/requirements.txt"
+  - "!**/package.json"
+banned_paths:
+  - "apps/**/migrations/**"
+  - "deploy/**"
+  - ".github/workflows/**"   # l’agente non cambia i gate
+max_changed_files: 6
+max_changed_loc: 200
+require_tests: true
+require_idempotency_note: true
+branch_pattern: "^fix/[a-z0-9._-]+$"
+must_pass_commands:
+  - "python -m pip install -r requirements.txt"
+  - "pytest -q"
+  - "ruff check ."
+  - "mypy --strict || true"   # opzionale: avvisa ma non blocca
+secrets_guard:
+  forbid_logging_patterns:
+    - "STRIPE_"
+    - "SECRET_KEY"
+    - "DATABASE_URL"
+invariants:
+  - "HOLD on click; SETTLE only on Stripe webhook (payment_intent.succeeded or checkout.session.completed)"
+  - "Each wallet mutation must bind provider_event_id; event replay must be idempotent"
+  - "Abort Stripe => release/expire HOLD; no balance loss"
+merge_strategy:
+  require_approval_labels:
+    - "APPROVE: PLAN"
+    - "QA: GREEN"
+spec:
+  fetch: "http://localhost:8000/api/schema/?format=openapi-json"
+  required: true
+  allowed_tags:
+    - wallet
+    - payments
+    - rewards
+  deny_unknown_endpoints: true
+  require_plan_listing:
+    # L’agente deve stampare nel PLAN gli operationId usati
+    - operationIds
