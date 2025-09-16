@@ -1,3 +1,25 @@
+import { api } from '@/lib/api'
+import type { ApiResult } from '@/lib/api'
+
+export type Course = {
+  id: number
+  title: string
+  description?: string
+  cover_url?: string
+}
+
+export async function listCourses(params?: { category?: string; search?: string; page?: number; page_size?: number }): Promise<ApiResult<{ items: Course[]; count?: number }>> {
+  const q = params ? { params } : undefined
+  return api.get('/v1/courses/', { params: params as any })
+}
+
+export async function getCourseOutline(courseId: number): Promise<ApiResult<any>> {
+  return api.get(`/v1/api/course/${courseId}/batch-data/`)
+}
+
+export async function listLessons(courseId: number): Promise<ApiResult<any[]>> {
+  return api.get(`/v1/courses/${courseId}/lessons/`)
+}
 // src/services/courses.ts
 import { api } from "@/lib/api"
 

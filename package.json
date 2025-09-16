@@ -4,9 +4,10 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-  "build": "vite build",
+    "build": "vite build",
     "typecheck": "tsc -p tsconfig.app.json --noEmit",
     "lint": "eslint .",
+    "test": "vitest",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -58,6 +59,9 @@
     "tailwind-merge": "^2.5.2",
     "vaul": "^1.1.2"
   },
+  "optionalDependencies": {
+    "zod": "^3.23.0"
+  },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@playwright/test": "^1.55.0",
@@ -68,6 +72,7 @@
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.33.0",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
@@ -76,5 +81,7 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
     "vite": "^7.1.2"
+    ,
+    "vitest": "^0.34.0"
   }
 }

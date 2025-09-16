@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { globalIgnores } from 'eslint/config'
+import importPlugin from 'eslint-plugin-import'
 
 export default tseslint.config([
   globalIgnores(['dist']),
@@ -15,6 +16,9 @@ export default tseslint.config([
       reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
     ],
+    plugins: {
+      import: importPlugin,
+    },
     rules: {
       // Prevent accidental on-chain balance reads from FE services.
       'no-restricted-imports': [
@@ -26,6 +30,16 @@ export default tseslint.config([
           ],
         },
       ],
+          // Disallow presentational UI from importing services/store
+          'import/no-restricted-paths': [
+            'error',
+            {
+              zones: [
+                { target: './src/ui', from: './src/services', message: 'UI (src/ui) must not import from src/services' },
+                { target: './src/ui', from: './src/store', message: 'UI (src/ui) must not import from src/store' }
+              ]
+            }
+          ],
     },
     languageOptions: {
       ecmaVersion: 2020,

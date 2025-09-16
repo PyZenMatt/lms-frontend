@@ -1,8 +1,8 @@
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint'],
-  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
+  plugins: ['@typescript-eslint', 'import'],
+  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'plugin:import/recommended'],
   rules: {
     // Disallow direct imports of ethers library from arbitrary modules.
   // Developers should use the on-chain wrapper in `src/web3/ethersWeb3.ts` (alias `@onchain/ethersWeb3`).
@@ -40,3 +40,23 @@ module.exports.overrides = [
     }
   }
 ]
+
+// Add import/no-restricted-paths restrictions for presentational UI
+module.exports.rules = module.exports.rules || {};
+module.exports.rules['import/no-restricted-paths'] = [
+  'error',
+  {
+    zones: [
+      {
+        target: './src/ui',
+        from: './src/services',
+        message: 'Presentational UI under src/ui must not import from src/services (use injected props or context).'
+      },
+      {
+        target: './src/ui',
+        from: './src/store',
+        message: 'Presentational UI under src/ui must not import from src/store (use container components).'
+      }
+    ]
+  }
+];

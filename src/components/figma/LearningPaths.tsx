@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "./ui/card"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
@@ -21,30 +21,12 @@ import { useAuth } from "./AuthContext"
 import { useNavigate } from "react-router-dom"
 import { ImageWithFallback } from "./figma/ImageWithFallback"
 import { toast } from "sonner"
-import { listCourses } from "@/services/courses"
+import { useCourses } from '@/hooks/useCourses'
+import { toCourseCardVM, CourseCardVM } from '@/adapters/courses'
+// removed unused useQuery import
 import { getEnrolledCourses } from "@/services/student"
 
-interface Course {
-  id: string
-  title: string
-  description: string
-  instructor: string
-  instructorAvatar: string
-  thumbnail: string
-  level: 'beginner' | 'intermediate' | 'advanced'
-  duration: string
-  lessons: number
-  students: number
-  rating: number
-  reviews: number
-  price: number
-  tokens: number
-  category: string
-  tags: string[]
-  enrolled?: boolean
-  progress?: number
-  featured?: boolean
-}
+type Course = CourseCardVM & { enrolled?: boolean; progress?: number; featured?: boolean; tokens?: number; }
 
 interface LearningPathsProps {
   onContinueCourse?: (courseId: string) => void
@@ -61,95 +43,30 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
   const [allCourses, setAllCourses] = useState<Course[]>([])
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([])
   // local UI state
-  const [, setLoading] = useState(false)
+  // (no local loading state required here)
 
-  // helper to map API course shape to UI Course
-  const mapApiToUi = useCallback((c: Record<string, unknown>): Course => {
-    const getStr = (k: string) => {
-      const v = c[k]
-      return typeof v === "string" ? v : undefined
+  // use adapter to normalize DTOs into VMs consumed by UI
+
+  // load courses from API via hook
+  const coursesQuery = useCourses({ page: 1, page_size: 100 })
+  useEffect(() => {
+    if (coursesQuery.data) {
+      const dtoList = coursesQuery.data as any[]
+      const mapped = dtoList.map((d) => ({ ...toCourseCardVM(d), tokens: (d as any).tokens ?? (d as any).price_tokens ?? 0 }))
+      setAllCourses(mapped)
     }
-    const getNum = (k: string) => {
-      const v = c[k]
-      return typeof v === "number" ? v : undefined
-    }
+  }, [coursesQuery.data])
 
-    const idRaw = c["id"] ?? c["course_id"]
-    const id = typeof idRaw === "string" || typeof idRaw === "number" ? String(idRaw) : ""
-
-    const levelRaw = c["level"]
-    const level = (typeof levelRaw === "string" && (levelRaw === "beginner" || levelRaw === "intermediate" || levelRaw === "advanced")) ? (levelRaw as 'beginner' | 'intermediate' | 'advanced') : 'beginner'
-
-  const tokensRaw = c["tokens"] ?? c["token_cost"] ?? c["price_tokens"]
-  const tokens = typeof tokensRaw === "number" ? tokensRaw : 0
-
-    const progressRaw = c["progress_percent"] ?? c["progress"]
-    const progress = typeof progressRaw === "number" ? progressRaw : undefined
-
-    // price extraction: try multiple possible keys and accept strings like "9.99"
-    const tryNum = (k: string) => {
-      const v = c[k]
-      if (typeof v === 'number') return v
-      if (typeof v === 'string') {
-        const p = parseFloat(v.replace(',', '.'))
-        return Number.isFinite(p) ? p : undefined
-      }
-      if (typeof v === 'object' && v !== null) {
-        const maybe = (v as any).price ?? (v as any).value ?? (v as any).amount
-        if (typeof maybe === 'number') return maybe
-        if (typeof maybe === 'string') {
-          const p = parseFloat((maybe as string).replace(',', '.'))
-          return Number.isFinite(p) ? p : undefined
-        }
-      }
-      return undefined
-    }
-
-    const priceCandidate = tryNum('price') ?? tryNum('price_eur') ?? tryNum('student_pay_eur') ?? tryNum('price_amount') ?? tryNum('price_amount_eur')
-
-    return {
-      id,
-      title: getStr("title") ?? getStr("name") ?? "",
-      description: getStr("description") ?? "",
-      instructor: getStr("instructor") ?? getStr("instructor_name") ?? "",
-      instructorAvatar: getStr("instructor_avatar") ?? getStr("instructorAvatar") ?? "",
-      thumbnail: getStr("cover_url") ?? getStr("cover_image") ?? getStr("thumbnail") ?? "",
-      level,
-      duration: getStr("duration") ?? `${getNum("lessons_count") ?? getNum("lessons") ?? 0} lessons`,
-      lessons: getNum("lessons_count") ?? getNum("lessons") ?? 0,
-      students: getNum("students_count") ?? getNum("students") ?? 0,
-      rating: getNum("rating") ?? 0,
-      reviews: getNum("reviews") ?? 0,
-  price: (typeof priceCandidate === 'number' ? priceCandidate : 0) as number,
-      tokens,
-      category: getStr("category") ?? getStr("category_name") ?? "",
-      tags: Array.isArray(c["tags"]) ? (c["tags"] as string[]) : [],
-      enrolled: !!(c["enrolled"] || c["is_enrolled"] || progress !== undefined),
-      progress,
-      featured: !!c["featured"],
-    }
-  }, [])
-
-  // load courses from API
+  // still use getEnrolledCourses for enrolled list (could be wrapped in a hook similarly)
   useEffect(() => {
     let mounted = true
     ;(async () => {
-      setLoading(true)
       try {
-        const allRes = await listCourses({ page: 1, page_size: 100 })
-        if (!mounted) return
-        if (allRes.ok) {
-          const mapped = allRes.data.map(mapApiToUi)
-          setAllCourses(mapped)
-        }
-
         const enrolledRes = await getEnrolledCourses(1, 100)
         if (!mounted) return
         if (enrolledRes.ok) {
-          // Ensure enrolled flag is set for courses coming from the enrolled API
-          const mappedEnrolled = enrolledRes.data.items.map(mapApiToUi).map(e => ({ ...e, enrolled: true }))
+          const mappedEnrolled = (enrolledRes.data.items as any[]).map((d) => ({ ...toCourseCardVM(d), tokens: (d as any).tokens ?? (d as any).price_tokens ?? 0, enrolled: true }))
           setEnrolledCourses(mappedEnrolled)
-          // mark enrolled in allCourses list if needed
           setAllCourses(prev => {
             const byId = new Map(prev.map(p => [p.id, p]))
             mappedEnrolled.forEach(e => byId.set(e.id, { ...(byId.get(e.id) ?? e), enrolled: true, progress: e.progress }))
@@ -157,13 +74,11 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
           })
         }
       } catch (err: unknown) {
-        console.debug("Error loading courses:", err)
-      } finally {
-        setLoading(false)
+        console.debug('Error loading enrolled', err)
       }
     })()
     return () => { mounted = false }
-  }, [mapApiToUi])
+  }, [])
 
   const availableCourses = allCourses.filter(course => !course.enrolled)
   const featuredCourses = allCourses.filter(course => course.featured)
