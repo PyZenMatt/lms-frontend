@@ -22,7 +22,8 @@ import { useNavigate } from "react-router-dom"
 import { ImageWithFallback } from "./figma/ImageWithFallback"
 import { toast } from "sonner"
 import { useCourses } from '@/hooks/useCourses'
-import { toCourseCardVM, CourseCardVM } from '@/adapters/courses'
+import { toCourseCardVM } from '@/adapters/courses'
+import type { CourseCardVM } from '@/adapters/courses'
 // removed unused useQuery import
 import { getEnrolledCourses } from "@/services/student"
 
