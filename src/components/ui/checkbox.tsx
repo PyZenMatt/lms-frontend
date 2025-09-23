@@ -13,7 +13,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         <span
           className={cn(
             "relative inline-flex h-5 w-5 items-center justify-center rounded-md border transition",
-            "bg-background text-background",
+            "bg-slate-800 text-background",
             "focus-within:ring-2 focus-within:ring-ring/50",
             "border-border"
           )}
@@ -27,7 +27,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           />
           <span
             className={cn(
-              "pointer-events-none inline-block h-3 w-3 scale-0 rounded-sm bg-primary transition-transform",
+              "pointer-events-none inline-block h-3 w-3 scale-0 rounded-sm bg-yellow-400 transition-transform",
               "peer-checked:scale-100"
             )}
           />

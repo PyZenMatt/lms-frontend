@@ -26,12 +26,12 @@ export function Switch({ checked, onCheckedChange, disabled, label, className }:
       <span
         className={cn(
           "relative h-6 w-10 rounded-full transition-colors",
-          checked ? "bg-primary" : "bg-[--color-switch-background]"
+          checked ? "bg-yellow-400" : "bg-slate-800"
         )}
       >
         <span
           className={cn(
-            "absolute top-1/2 h-5 w-5 -translate-y-1/2 transform rounded-full bg-background shadow transition-all",
+            "absolute top-1/2 h-5 w-5 -translate-y-1/2 transform rounded-full bg-white shadow transition-all",
             checked ? "left-[22px]" : "left-[2px]"
           )}
         />
