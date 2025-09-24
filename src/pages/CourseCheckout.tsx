@@ -8,6 +8,8 @@ import type { Stripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
 import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
+import { Input } from "@/components/figma/ui/input";
+import { Button } from "@/components/figma/ui/button";
 
 type SummaryState = {
   price_eur?: number
@@ -47,6 +49,8 @@ export default function CourseCheckout() {
   const [publishableKey, setPublishableKey] = React.useState<string | null>(null)
 
   // discount overrides may be provided by backend; no TEO-UI here
+  const [couponCode, setCouponCode] = React.useState<string>("")
+  const [couponStatus, setCouponStatus] = React.useState<{ ok: boolean; message: string } | null>(null)
 
   // wallet address not needed during checkout
 
@@ -230,8 +234,19 @@ export default function CourseCheckout() {
         </div>
 
         <div className="space-y-4">
-          {/* Teo Discount Widget */}
-          {/* Teo discount UI removed — platform no longer shows teocoin discount control here */}
+          {/* Coupon placeholder */}
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="text-sm text-muted-foreground">Hai un coupon?</div>
+            <div className="mt-2 flex gap-2">
+              <Input value={couponCode} onChange={e => setCouponCode(e.target.value)} placeholder="Inserisci codice coupon" />
+              <Button size="sm" onClick={() => setCouponStatus({ ok: true, message: 'Placeholder: verifica coupon non ancora collegata.' })}>Applica</Button>
+            </div>
+            {couponStatus && (
+              <div className={`mt-3 text-sm ${couponStatus.ok ? 'text-emerald-700' : 'text-destructive'}`}>
+                {couponStatus.message}
+              </div>
+            )}
+          </div>
 
           {!clientSecret ? (
             <>

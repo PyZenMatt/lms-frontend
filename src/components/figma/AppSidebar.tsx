@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Home, BookOpen, Palette, User, Bell } from "lucide-react"
+import { Home, BookOpen, User, Bell } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -85,9 +85,6 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
     <Sidebar>
           <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
-          <div className="size-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-            <Palette className="size-4 text-white" />
-          </div>
           <div>
             <h2 className="font-medium">OpenPython</h2>
             <p className="text-xs text-muted-foreground">Community Studio</p>

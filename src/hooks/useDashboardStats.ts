@@ -3,7 +3,6 @@ import { useEnrolledCourses } from '@/hooks/useEnrolledCourses'
 import { getCourseOutline } from "@/services/courses";
 import { listCourseLessons } from "@/services/exercises";
 import { listAssignedReviews } from "@/services/reviews";
-import { getDbWallet } from "@/services/wallet";
 
 export type DashboardStats = {
   activeCourses: number;
@@ -28,23 +27,28 @@ export default function useDashboardStats() {
   const [error, setError] = useState<string | null>(null);
 
   const enrolledQuery = useEnrolledCourses(1, 100)
-  const [enriching, setEnriching] = useState(false)
+  // enrichment flag removed; keep simple loading state
 
   useEffect(() => {
     let mounted = true
     async function enrich() {
-      if (!enrolledQuery.data) return
-      setEnriching(true)
+      if (!enrolledQuery.data) {
+        if (mounted) setLoading(false)
+        return
+      }
+      if (mounted) setLoading(true)
+  // enrichment started
       try {
-        const rawEnrolled = enrolledQuery.data.items ?? []
-        const enrolledCoursesInitial = rawEnrolled.map((c: any) => {
-          const id = String(c.id ?? c.course_id ?? c.pk ?? "")
-          const title = (c.title ?? c.name ?? "Untitled") as string
-          const description = (c.description ?? undefined) as string | undefined
-          const thumbnail = (c.cover_url ?? c.cover_image ?? c.thumbnail ?? undefined) as string | undefined
-          const progressPercent = typeof c.progress === 'number' ? c.progress : (typeof c.progress_percent === 'number' ? c.progress_percent : undefined)
-          const lessonsTotal = typeof c.lessons_count === 'number' ? c.lessons_count : (typeof c.lessons === 'number' ? c.lessons : (typeof c.total_lessons === 'number' ? c.total_lessons : 10))
-          const lessonsCompleted = typeof c.completed_lessons === 'number' ? c.completed_lessons : (typeof progressPercent === 'number' ? Math.round((progressPercent / 100) * lessonsTotal) : 0)
+  const rawEnrolled = enrolledQuery.data?.items ?? []
+        const enrolledCoursesInitial = rawEnrolled.map((c: unknown) => {
+          const ci = c as any
+          const id = String(ci.id ?? ci.course_id ?? ci.pk ?? "")
+          const title = (ci.title ?? ci.name ?? "Untitled") as string
+          const description = (ci.description ?? undefined) as string | undefined
+          const thumbnail = (ci.cover_url ?? ci.cover_image ?? ci.thumbnail ?? undefined) as string | undefined
+          const progressPercent = typeof ci.progress === 'number' ? ci.progress : (typeof ci.progress_percent === 'number' ? ci.progress_percent : undefined)
+          const lessonsTotal = typeof ci.lessons_count === 'number' ? ci.lessons_count : (typeof ci.lessons === 'number' ? ci.lessons : (typeof ci.total_lessons === 'number' ? ci.total_lessons : 10))
+          const lessonsCompleted = typeof ci.completed_lessons === 'number' ? ci.completed_lessons : (typeof progressPercent === 'number' ? Math.round((progressPercent / 100) * lessonsTotal) : 0)
           return { id, title, description, thumbnail, progressPercent, lessonsTotal, lessonsCompleted }
         })
 
@@ -78,25 +82,25 @@ export default function useDashboardStats() {
           })
         )
 
-        if (!mounted) return
-        const activeCourses = enrolledQuery.ok ? (enrolledQuery.data.count ?? enrolledQuery.data.items.length) : 0
+  if (!mounted) return
+  const activeCourses = enrolledQuery.isSuccess ? (enrolledQuery.data?.count ?? (enrolledQuery.data?.items.length ?? 0)) : 0
         const pendingReviews = 0
         const reviewsGiven = 0
         const teoBalance = 0
         const creatorTokensLabel = `${Number.isFinite(teoBalance) ? Math.round(teoBalance) : 0} Creator Tokens`
         setStats({ activeCourses, pendingReviews, reviewsGiven, teoBalance: teoBalance ?? 0, creatorTokensLabel, enrolledCourses: enriched })
         setError(null)
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (!mounted) return
-        setError(String(e?.message ?? e ?? 'Error'))
+        setError(String((e as Error)?.message ?? String(e ?? 'Error')))
         setStats({ activeCourses: 0, pendingReviews: 0, reviewsGiven: 0, teoBalance: 0, creatorTokensLabel: '0 Creator Tokens' })
       } finally {
-        if (mounted) setEnriching(false)
+        if (mounted) setLoading(false)
       }
     }
     enrich()
     return () => { mounted = false }
-  }, [enrolledQuery.data])
+  }, [enrolledQuery.data, enrolledQuery.isSuccess])
 
   return { stats, loading, error } as const;
 }

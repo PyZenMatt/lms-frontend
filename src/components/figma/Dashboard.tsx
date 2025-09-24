@@ -29,7 +29,6 @@ export function Dashboard({ onContinueCourse, onNavigateToPage }: DashboardProps
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3>Continue Learning</h3>
-          <Button size="sm" variant="ghost" onClick={() => navigate('/courses')}>Browse Courses</Button>
         </div>
         <div className="space-y-3">
           {loading ? (
