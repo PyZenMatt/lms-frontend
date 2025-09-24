@@ -3,7 +3,8 @@ export type RoleLike = 'student' | 'teacher' | 'admin' | null | undefined | stri
 
 export const DASHBOARD_HOME: Record<string, string> = {
   admin: '/admin',
-  teacher: '/teacher',
+  // teacher dashboard is disabled; point to generic dashboard
+  teacher: '/dashboard',
   student: '/dashboard/student',
 };
 
@@ -15,6 +16,7 @@ export function getDashboardHome(role?: RoleLike): string {
   if (!role) return '/dashboard';
   const r = String(role).toLowerCase();
   if (r === 'admin') return DASHBOARD_HOME.admin;
+  // treat teacher role as student-facing dashboard by default
   if (r === 'teacher') return DASHBOARD_HOME.teacher;
   if (r === 'student') return DASHBOARD_HOME.student;
   return '/dashboard';

@@ -33,16 +33,12 @@ import Forbidden from "./pages/Forbidden";
 import ProfilePage from "./pages/ProfilePage";
 import StudentDashboard from "./pages/StudentDashboard";
 import DashboardRedirect from "./pages/DashboardRedirect";
-import TeacherDashboard from "./pages/TeacherDashboard";
-import StakingPage from "./pages/teacher/Staking";
 import AdminDashboard from "./pages/AdminDashboard";
 import ApproveCourses from "./pages/admin/ApproveCourses";
-import CoursesStudioList from "./pages/studio/CoursesStudioList"
-import CourseStudioForm from "./pages/studio/CourseStudioForm"
-import CourseBuilder from "./pages/studio/CourseBuilder"
+// Teacher dashboard and studio features are disabled; routes redirect to main dashboard
 import { useParams } from "react-router-dom";
 import WalletPage from "./pages/WalletPage";
-import PendingDiscountsPage from "./features/discounts/pages/PendingDiscountsPage";
+// PendingDiscountsPage (teacher-only) not used because teacher routes are disabled
 import DropdownSmoke from "./pages/_smoke/DropdownSmoke";
 
 function BuyRedirect() {
@@ -253,40 +249,18 @@ export default function App() {
             }
           />
 
-          {/* TEACHER only */}
-          <Route
-            path="/teacher"
-            element={
-              <RoleRoute allow="teacher">
-                <ErrorBoundary><TeacherDashboard /></ErrorBoundary>
-              </RoleRoute>
-            }
-          />
-          <Route
-            path="/teacher/staking"
-            element={
-              <RoleRoute allow="teacher">
-                <ErrorBoundary><StakingPage /></ErrorBoundary>
-              </RoleRoute>
-            }
-          />
-
-          <Route
-            path="/teacher/pending-discounts"
-            element={
-              <RoleRoute allow="teacher">
-                <ErrorBoundary><PendingDiscountsPage /></ErrorBoundary>
-              </RoleRoute>
-            }
-          />
+          {/* TEACHER routes disabled: redirect to student dashboard */}
+          <Route path="/teacher" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/teacher/staking" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/teacher/pending-discounts" element={<Navigate to="/dashboard" replace />} />
 
           {/* /teacher/choices removed - use sidebar decision panel instead */}
 
-          {/* Studio (teacher) */}
-          <Route path="studio/courses" element={<ProtectedRoute><ErrorBoundary><CoursesStudioList /></ErrorBoundary></ProtectedRoute>} />
-          <Route path="studio/courses/new" element={<ProtectedRoute><ErrorBoundary><CourseStudioForm /></ErrorBoundary></ProtectedRoute>} />
-          <Route path="studio/courses/:id/edit" element={<ProtectedRoute><ErrorBoundary><CourseStudioForm /></ErrorBoundary></ProtectedRoute>} />
-          <Route path="studio/courses/:id/builder" element={<ProtectedRoute><ErrorBoundary><CourseBuilder /></ErrorBoundary></ProtectedRoute>} />
+          {/* Studio (teacher) features disabled: redirect to dashboard */}
+          <Route path="studio/courses" element={<Navigate to="/dashboard" replace />} />
+          <Route path="studio/courses/new" element={<Navigate to="/dashboard" replace />} />
+          <Route path="studio/courses/:id/edit" element={<Navigate to="/dashboard" replace />} />
+          <Route path="studio/courses/:id/builder" element={<Navigate to="/dashboard" replace />} />
 
           {/* Wallet */}
           <Route

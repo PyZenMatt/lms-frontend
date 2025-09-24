@@ -200,7 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             avatar: profile.avatar ?? null,
             walletAddress,
           };
-          try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save artlearn_user failed', e); }
+          try { localStorage.setItem("openpython_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save openpython_user failed', e); }
         } else {
           // fallback: use token info and wallet result so UI isn't empty
           const tokenUser = getUserFromToken();
@@ -214,7 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             avatar: null,
             walletAddress,
           };
-          try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save artlearn_user fallback failed', e); }
+          try { localStorage.setItem("openpython_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save openpython_user fallback failed', e); }
         }
   } catch (err) { console.debug('[Auth] profile sync failed', err); }
   setAuth({ booting: false, isAuthenticated: true, role: r, authChecked: true });
@@ -267,7 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           avatar: profile.avatar ?? null,
           walletAddress,
         };
-        try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save artlearn_user failed', e); }
+  try { localStorage.setItem("openpython_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save openpython_user failed', e); }
       } else {
         const tokenUser = getUserFromToken();
         const walletAddress = walletRes && walletRes.ok ? ((walletRes as any).data?.address ?? null) : null;
@@ -280,7 +280,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           avatar: null,
           walletAddress,
         };
-        try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save artlearn_user fallback failed', e); }
+  try { localStorage.setItem("openpython_user", JSON.stringify(artUser)); } catch (e) { console.debug('[Auth] save openpython_user fallback failed', e); }
       }
   } catch (err) { console.debug('[Auth] postAuth profile sync failed', err); }
     if (unverified) {
@@ -353,9 +353,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
         try {
           // Remove legacy UI cache
-          localStorage.removeItem("artlearn_user");
+          localStorage.removeItem("openpython_user");
         } catch (e) {
-          console.debug('[Auth] logout: remove artlearn_user failed', e);
+          console.debug('[Auth] logout: remove openpython_user failed', e);
         }
         // Clear react-query cache and mark auth checked so guards stop waiting
         try {

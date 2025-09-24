@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Home, BookOpen, Users, Trophy, Palette, MessageCircle, User, UserCheck, GraduationCap, Wallet, Bell } from "lucide-react"
+import { Home, BookOpen, Users, Trophy, Palette, MessageCircle, User, UserCheck, Wallet, Bell } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -16,7 +16,7 @@ import { Badge } from "./ui/badge"
 import { useAuth } from "./AuthContext"
 import useDashboardStats from "@/hooks/useDashboardStats";
 import { getUserFromToken } from "@/lib/auth"
-import { getUnreadCount, getTeacherChoicesPendingCount } from "@/services/notifications";
+import { getUnreadCount } from "@/services/notifications";
 
 interface AppSidebarProps {
   currentPage: string
@@ -25,7 +25,8 @@ interface AppSidebarProps {
 
 export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
   const { user } = useAuth()
-  const isTeacherRole = user?.role === 'teacher';
+  // teacher role is intentionally not used; teacher dashboard is disabled
+  const isTeacherRole = false;
   const { stats, loading } = useDashboardStats();
 
   // Display safe username: prefer name, fall back to email or id, truncate for UI, keep full value in tooltip
@@ -45,16 +46,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
     { title: "Achievements", page: "achievements", icon: Trophy },
   ]
 
-  const teacherMenuItems = [
-    { title: "Dashboard", page: "teacher-dashboard", icon: GraduationCap },
-    { title: "My Courses", page: "courses", icon: BookOpen },
-    { title: "Students", page: "students", icon: Users },
-    { title: "Peer Review", page: "peer-review", icon: UserCheck },
-    { title: "Community", page: "community", icon: Users },
-    { title: "Analytics", page: "analytics", icon: Trophy },
-  ]
-
-  const menuItems = isTeacherRole ? teacherMenuItems : studentMenuItems
+  const menuItems = studentMenuItems
 
   // If user is admin, replace Learning Paths with Approve courses
   // runtime-safe admin check without 'any'
@@ -93,43 +85,19 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
   }
 
   function OpportunityBadge() {
-    const [count, setCount] = React.useState<number | null>(null)
-    React.useEffect(() => {
-      let mounted = true
-
-      async function fetchCount() {
-        if (!isTeacherRole) return
-        try {
-          const c = await getTeacherChoicesPendingCount()
-          if (mounted) setCount(c)
-        } catch {
-          if (mounted) setCount(null)
-        }
-      }
-
-      fetchCount()
-
-      const onUpdated = () => { fetchCount() }
-      window.addEventListener("notifications:updated", onUpdated as EventListener)
-      return () => { mounted = false; window.removeEventListener("notifications:updated", onUpdated as EventListener) }
-  }, [])
-
-    if (!count || count <= 0) return null
-    return <Badge variant="secondary" className="ml-auto bg-yellow-100 text-yellow-800">{count}</Badge>
+    return null
   }
 
   return (
     <Sidebar>
-      <SidebarHeader>
+          <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
           <div className="size-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
             <Palette className="size-4 text-white" />
           </div>
           <div>
-            <h2 className="font-medium">ArtLearn</h2>
-            <p className="text-xs text-muted-foreground">
-              {isTeacherRole ? "Teacher Studio" : "Community Studio"}
-            </p>
+            <h2 className="font-medium">OpenPython</h2>
+            <p className="text-xs text-muted-foreground">Community Studio</p>
           </div>
         </div>
       </SidebarHeader>
@@ -179,17 +147,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          {isTeacherRole && (
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => onPageChange("teacher-opportunities")}
-              >
-                <Trophy className="size-4" />
-                <span>Opportunity</span>
-                <OpportunityBadge />
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          )}
+          {/* teacher-only opportunity removed */}
 
           <SidebarMenuItem>
             <SidebarMenuButton onClick={() => onPageChange("wallet")}>

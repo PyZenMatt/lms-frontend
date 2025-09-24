@@ -38,7 +38,7 @@ export function useAuth(): FigmaAuthCtx {
 
 	const [user, setUser] = React.useState<FigmaUser | null>(() => {
 		try {
-			const s = localStorage.getItem("artlearn_user");
+				const s = localStorage.getItem("openpython_user");
 			return s ? (JSON.parse(s) as FigmaUser) : null;
 		} catch {
 			return null;
@@ -50,7 +50,7 @@ export function useAuth(): FigmaAuthCtx {
 
 		const syncLocalUser = async () => {
 			try {
-				const s = localStorage.getItem("artlearn_user");
+				const s = localStorage.getItem("openpython_user");
 				if (s) {
 					if (mounted) setUser(JSON.parse(s) as FigmaUser);
 					return;
@@ -76,6 +76,7 @@ export function useAuth(): FigmaAuthCtx {
 							avatar: profile.avatar ?? undefined,
 						};
 						try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (err) { console.debug('[FigmaShim] save backend user failed', err); }
+						try { localStorage.setItem("openpython_user", JSON.stringify(artUser)); } catch (err) { console.debug('[FigmaShim] save backend user failed', err); }
 						if (mounted) setUser(artUser);
 						return;
 					}
@@ -120,6 +121,7 @@ export function useAuth(): FigmaAuthCtx {
 										avatar: profile.avatar ?? undefined,
 									};
 									try { localStorage.setItem("artlearn_user", JSON.stringify(artUser)); } catch (err) { console.debug('[FigmaShim] save backend user failed', err); }
+									try { localStorage.setItem("openpython_user", JSON.stringify(artUser)); } catch (err) { console.debug('[FigmaShim] save backend user failed', err); }
 									if (mounted) setUser(artUser);
 									return;
 								}
@@ -169,7 +171,7 @@ export function useAuth(): FigmaAuthCtx {
 					if (loginOk) {
 						try {
 								// Always store student-level tokens on signup
-								localStorage.setItem('artlearn_user', JSON.stringify({ id: data.user.id, name: data.user.username, email: data.user.email, role: data.user.role, tokens: 50 }));
+							localStorage.setItem('openpython_user', JSON.stringify({ id: data.user.id, name: data.user.username, email: data.user.email, role: data.user.role, tokens: 50 }));
 						} catch (err) { console.debug('[FigmaShim] save backend user failed', err); }
 						return true;
 					}
@@ -195,6 +197,7 @@ export function useAuth(): FigmaAuthCtx {
 			tokens: 50, // always student-level tokens
 		};
 		try { localStorage.setItem("artlearn_user", JSON.stringify(newUser)); } catch (err) { console.debug('[FigmaShim] signup save local user failed', err); }
+		try { localStorage.setItem("openpython_user", JSON.stringify(newUser)); } catch (err) { console.debug('[FigmaShim] signup save local user failed', err); }
 		setUser(newUser);
 		// emulate tokens so app can bootstrap
 		try {
@@ -224,7 +227,7 @@ export function useAuth(): FigmaAuthCtx {
 					const updated = { ...user, walletAddress: accounts[0] } as FigmaUser;
 					setUser(updated);
 					try {
-						localStorage.setItem("artlearn_user", JSON.stringify(updated));
+						localStorage.setItem("openpython_user", JSON.stringify(updated));
 					} catch (err) { console.debug("[FigmaShim] connectWallet: save user failed", err); }
 					return true;
 				}
@@ -238,7 +241,7 @@ export function useAuth(): FigmaAuthCtx {
 			const updated = { ...user, tokens: user.tokens + amount } as FigmaUser;
 			setUser(updated);
 			try {
-				localStorage.setItem("artlearn_user", JSON.stringify(updated));
+						localStorage.setItem("openpython_user", JSON.stringify(updated));
 			} catch (err) { console.debug('[FigmaShim] updateTokens save failed', err); }
 		}
 	};
