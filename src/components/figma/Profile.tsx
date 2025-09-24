@@ -1,420 +1,327 @@
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
-import { Button } from "./ui/button"
-import { Badge } from "./ui/badge"
+import * as React from "react"
+import { useEffect, useState } from "react"
+import { Card, CardContent } from "./ui/card"
 import { Input } from "./ui/input"
 import { Textarea } from "./ui/textarea"
 import { Label } from "./ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { Progress } from "./ui/progress"
+import { Button } from "./ui/button"
+import { Badge } from "./ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { 
-  Calendar, 
-  MapPin, 
-  Link as LinkIcon, 
-  Edit, 
-  Save, 
-  X, 
-  Trophy,
-  BookOpen,
-  Users,
-  Palette,
-  Star,
-  Clock,
-  Target
-} from "lucide-react"
+import { Github, Linkedin, Instagram, Facebook, MapPin } from "lucide-react"
+import { getProfile, updateProfile } from "@/services/profile"
+import type { Profile as ProfileType } from "@/services/profile"
 import { useAuth } from "./AuthContext"
-import { ImageWithFallback } from "./figma/ImageWithFallback"
+
+type ExtendedProfile = ProfileType & {
+  city?: string
+  website?: string
+  phone?: string
+  skills?: string[]
+  linkedin?: string
+  github?: string
+  instagram?: string
+  facebook?: string
+  via?: string
+  cap?: string
+}
+
+type AuthSetter = (updater: (u: unknown) => unknown) => void
 
 export function Profile() {
-  const { user, updateTokens } = useAuth()
-  const [isEditing, setIsEditing] = useState(false)
-  const [editForm, setEditForm] = useState({
-    name: user?.name || '',
-    bio: '',
-    location: '',
-    website: '',
-    skills: ['Digital Art', 'Character Design', 'Color Theory']
+  const { setUser } = useAuth() as { setUser?: AuthSetter }
+  const [profile, setProfile] = useState<ProfileType | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [isEditing, setIsEditing] = useState(true)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const [form, setForm] = useState({
+    username: "",
+    email: "",
+    first_name: "",
+    last_name: "",
+    city: "",
+    profession: "",
+    bio: "",
+    website: "",
+    phone: "",
+    address: "",
+    via: "",
+    cap: "",
+    linkedin: "",
+    github: "",
+    instagram: "",
+    facebook: "",
+    skills: "",
   })
 
-  // Mock user stats and data
-  const stats = {
-    coursesCompleted: 8,
-    reviewsGiven: 24,
-    reviewsReceived: 18,
-    communityRank: 42,
-    joinDate: 'January 2024',
-    currentStreak: 7
+  useEffect(() => {
+    let mounted = true
+    async function load() {
+      setLoading(true)
+      const p = await getProfile()
+      if (!mounted) return
+      setProfile(p)
+      if (p) {
+        setForm({
+          username: p.username || "",
+          email: p.email || "",
+          first_name: p.first_name || "",
+          last_name: p.last_name || "",
+          city: (p as ExtendedProfile).city || "",
+          profession: p.profession || "",
+          bio: p.bio || "",
+          website: (p as ExtendedProfile).website || "",
+          phone: (p as ExtendedProfile).phone || "",
+          address: p.address || "",
+          via: (p as ExtendedProfile).via || "",
+          cap: (p as ExtendedProfile).cap || "",
+          linkedin: (p as ExtendedProfile).linkedin || "",
+          github: (p as ExtendedProfile).github || "",
+          instagram: (p as ExtendedProfile).instagram || "",
+          facebook: (p as ExtendedProfile).facebook || "",
+          skills: ((p as ExtendedProfile).skills || []).join(", ")
+        })
+      }
+      setLoading(false)
+    }
+    load()
+    return () => { mounted = false }
+  }, [])
+
+  function validate(): boolean {
+    const e: Record<string, string> = {}
+    if (!form.username || form.username.trim().length < 1) e.username = "Username è obbligatorio"
+    if (!form.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) e.email = "Email valida è obbligatoria"
+    setErrors(e)
+    return Object.keys(e).length === 0
   }
 
-  const portfolio = [
-    {
-      id: '1',
-      title: 'Forest Landscape Study',
-      course: 'Digital Painting Fundamentals',
-      rating: 4.8,
-      reviews: 12,
-      image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&h=300&fit=crop',
-      date: '2 days ago'
-    },
-    {
-      id: '2', 
-      title: 'Character Portrait',
-      course: 'Character Design Workshop',
-      rating: 4.5,
-      reviews: 8,
-      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop',
-      date: '1 week ago'
-    },
-    {
-      id: '3',
-      title: 'Color Harmony Exercise',
-      course: 'Advanced Color Theory',
-      rating: 4.9,
-      reviews: 15,
-      image: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=300&h=300&fit=crop',
-      date: '2 weeks ago'
+  async function handleSave() {
+    if (!validate()) return
+    const fd = new FormData()
+    fd.append("username", form.username)
+    fd.append("email", form.email)
+    fd.append("first_name", form.first_name)
+    fd.append("last_name", form.last_name)
+    fd.append("bio", form.bio)
+    fd.append("profession", form.profession)
+    fd.append("website", form.website)
+    fd.append("phone", form.phone)
+    fd.append("address", form.address)
+    fd.append("city", form.city)
+  fd.append("via", form.via)
+  fd.append("cap", form.cap)
+  fd.append("linkedin", form.linkedin)
+  fd.append("github", form.github)
+  fd.append("instagram", form.instagram)
+  fd.append("facebook", form.facebook)
+    // skills as comma-separated
+    fd.append("skills", form.skills)
+
+    setLoading(true)
+    const updated = await updateProfile(fd)
+    setLoading(false)
+    if (updated) {
+      setProfile(updated)
+      // refresh auth context user if available
+  if (setUser) setUser((u) => ({ ...(u as Record<string, unknown>), name: updated.username, email: updated.email }))
+      setIsEditing(false)
     }
-  ]
+  }
 
-  const achievements = [
-    { name: 'First Steps', description: 'Completed first lesson', icon: '🎯', earned: true },
-    { name: 'Peer Helper', description: 'Gave 10 helpful reviews', icon: '🤝', earned: true },
-    { name: 'Art Explorer', description: 'Tried 3 different art styles', icon: '🎨', earned: true },
-    { name: 'Community Star', description: 'Earned 100+ tokens from peers', icon: '⭐', earned: false },
-    { name: 'Master Critic', description: 'Gave 50 peer reviews', icon: '👁️', earned: false },
-    { name: 'Course Champion', description: 'Completed 10 courses', icon: '🏆', earned: false }
-  ]
-
-  const currentCourses = [
-    {
-      id: '1',
-      title: 'Advanced Digital Painting',
-      progress: 65,
-      instructor: 'Prof. Sarah Mitchell',
-      nextLesson: 'Light and Shadow Techniques'
-    },
-    {
-      id: '2', 
-      title: 'Portfolio Development',
-      progress: 30,
-      instructor: 'Maya Rodriguez',
-      nextLesson: 'Curating Your Best Work'
+  function handleCancel() {
+    if (profile) {
+      setForm({
+        username: profile.username || "",
+        email: profile.email || "",
+        first_name: profile.first_name || "",
+        last_name: profile.last_name || "",
+        city: (profile as ExtendedProfile).city || "",
+        profession: profile.profession || "",
+        bio: profile.bio || "",
+        website: (profile as ExtendedProfile).website || "",
+        phone: (profile as ExtendedProfile).phone || "",
+        address: profile.address || "",
+        via: (profile as ExtendedProfile).via || "",
+        cap: (profile as ExtendedProfile).cap || "",
+        linkedin: (profile as ExtendedProfile).linkedin || "",
+        github: (profile as ExtendedProfile).github || "",
+        instagram: (profile as ExtendedProfile).instagram || "",
+        facebook: (profile as ExtendedProfile).facebook || "",
+        skills: ((profile as ExtendedProfile).skills || []).join(", ")
+      })
     }
-  ]
-
-  const handleSaveProfile = () => {
     setIsEditing(false)
-    // In real app, this would save to backend
+    setErrors({})
   }
+
+  if (loading) return <div>Loading...</div>
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1>Profile</h1>
-          <p className="text-muted-foreground">Manage your profile and track your artistic journey</p>
+          <p className="text-muted-foreground">Aggiorna le tue informazioni personali</p>
         </div>
-        <Button 
-          variant={isEditing ? "outline" : "default"}
-          onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
-        >
+        <div>
           {isEditing ? (
             <>
-              <Save className="size-4 mr-2" />
-              Save Changes
+              <Button variant="ghost" onClick={handleCancel} className="mr-2">Annulla</Button>
+              <Button onClick={handleSave}>Salva</Button>
             </>
           ) : (
-            <>
-              <Edit className="size-4 mr-2" />
-              Edit Profile
-            </>
+            <Button onClick={() => setIsEditing(true)}>Modifica</Button>
           )}
-        </Button>
+        </div>
       </div>
 
-      {/* Profile Header */}
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex flex-col items-center md:items-start">
               <Avatar className="size-24 mb-4">
-                <AvatarImage src={user?.avatar} alt={user?.name} />
-                <AvatarFallback className="text-xl">{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+                {profile?.avatar ? (
+                  <AvatarImage src={profile.avatar as string} alt={profile.username} />
+                ) : (
+                  <AvatarFallback className="text-xl">{(profile?.username || "U").charAt(0).toUpperCase()}</AvatarFallback>
+                )}
               </Avatar>
-              <Badge variant="outline" className="capitalize">
-                {user?.role}
-              </Badge>
+              <Badge variant="outline" className="capitalize">{profile?.role || 'student'}</Badge>
+              <div className="mt-3 flex gap-3">
+                {(profile as ExtendedProfile)?.github && (
+                  <a href={(profile as ExtendedProfile).github} target="_blank" rel="noreferrer" aria-label="GitHub">
+                    <Github className="size-5" />
+                  </a>
+                )}
+                {(profile as ExtendedProfile)?.linkedin && (
+                  <a href={(profile as ExtendedProfile).linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn">
+                    <Linkedin className="size-5" />
+                  </a>
+                )}
+                {(profile as ExtendedProfile)?.instagram && (
+                  <a href={(profile as ExtendedProfile).instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
+                    <Instagram className="size-5" />
+                  </a>
+                )}
+                {(profile as ExtendedProfile)?.facebook && (
+                  <a href={(profile as ExtendedProfile).facebook} target="_blank" rel="noreferrer" aria-label="Facebook">
+                    <Facebook className="size-5" />
+                  </a>
+                )}
+                {(profile as ExtendedProfile)?.via && (
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="size-4" />{(profile as ExtendedProfile).via}{(profile as ExtendedProfile).cap ? `, ${ (profile as ExtendedProfile).cap}` : ''}</div>
+                )}
+              </div>
             </div>
-            
-            <div className="flex-1 space-y-4">
-              {isEditing ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input
-                      id="name"
-                      value={editForm.name}
-                      onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
-                      placeholder="Tell us about your artistic journey..."
-                      value={editForm.bio}
-                      onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
-                      className="min-h-20"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        placeholder="City, Country"
-                        value={editForm.location}
-                        onChange={(e) => setEditForm({...editForm, location: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="website">Website</Label>
-                      <Input
-                        id="website"
-                        placeholder="https://your-portfolio.com"
-                        value={editForm.website}
-                        onChange={(e) => setEditForm({...editForm, website: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <h2 className="text-xl">{user?.name}</h2>
-                    <p className="text-muted-foreground">
-                      {editForm.bio || "Passionate digital artist exploring new techniques and styles through community learning."}
-                    </p>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="size-4" />
-                      <span>Joined {stats.joinDate}</span>
-                    </div>
-                    {editForm.location && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="size-4" />
-                        <span>{editForm.location}</span>
-                      </div>
-                    )}
-                    {editForm.website && (
-                      <div className="flex items-center gap-1">
-                        <LinkIcon className="size-4" />
-                        <a href={editForm.website} className="hover:underline">Portfolio</a>
-                      </div>
-                    )}
-                  </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {editForm.skills.map((skill, index) => (
-                      <Badge key={index} variant="secondary">{skill}</Badge>
-                    ))}
+            <div className="flex-1 space-y-4">
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">Username *</Label>
+                    <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+                    {errors.username && <p className="text-red-600 text-sm">{errors.username}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">Email *</Label>
+                    <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                    {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
                   </div>
                 </div>
-              )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">Nome</Label>
+                    <Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">Cognome</Label>
+                    <Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">Città</Label>
+                    <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">Professione</Label>
+                    <Input value={form.profession} onChange={(e) => setForm({ ...form, profession: e.target.value })} />
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-1">
+                  <Label className="mb-1 block">Telefono</Label>
+                  <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                </div>
+
+                <div className="mt-4 space-y-1">
+                  <Label className="mb-1 block">Website</Label>
+                  <Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">Via</Label>
+                    <Input value={form.via} onChange={(e) => setForm({ ...form, via: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">CAP</Label>
+                    <Input value={form.cap} onChange={(e) => setForm({ ...form, cap: e.target.value })} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">LinkedIn</Label>
+                    <div className="flex items-center gap-2">
+                      <Linkedin className="size-5 text-muted-foreground" />
+                      <Input value={form.linkedin} onChange={(e) => setForm({ ...form, linkedin: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">GitHub</Label>
+                    <div className="flex items-center gap-2">
+                      <Github className="size-5 text-muted-foreground" />
+                      <Input value={form.github} onChange={(e) => setForm({ ...form, github: e.target.value })} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">Instagram</Label>
+                    <div className="flex items-center gap-2">
+                      <Instagram className="size-5 text-muted-foreground" />
+                      <Input value={form.instagram} onChange={(e) => setForm({ ...form, instagram: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">Facebook</Label>
+                    <div className="flex items-center gap-2">
+                      <Facebook className="size-5 text-muted-foreground" />
+                      <Input value={form.facebook} onChange={(e) => setForm({ ...form, facebook: e.target.value })} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-1">
+                  <Label className="mb-1 block">Bio</Label>
+                  <Textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
+                </div>
+
+                <div className="mt-4 space-y-1">
+                  <Label className="mb-1 block">Skills (separate con virgola)</Label>
+                  <Input value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} />
+                </div>
+
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center size-12 bg-purple-100 rounded-full mb-2 mx-auto">
-              <Trophy className="size-6 text-purple-600" />
-            </div>
-            <p className="text-2xl font-medium">{user?.tokens || 0}</p>
-            <p className="text-sm text-muted-foreground">Creator Tokens ✨</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center size-12 bg-green-100 rounded-full mb-2 mx-auto">
-              <BookOpen className="size-6 text-green-600" />
-            </div>
-            <p className="text-2xl font-medium">{stats.coursesCompleted}</p>
-            <p className="text-sm text-muted-foreground">Courses Completed</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center size-12 bg-blue-100 rounded-full mb-2 mx-auto">
-              <Users className="size-6 text-blue-600" />
-            </div>
-            <p className="text-2xl font-medium">{stats.reviewsGiven}</p>
-            <p className="text-sm text-muted-foreground">Reviews Given</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center size-12 bg-amber-100 rounded-full mb-2 mx-auto">
-              <Target className="size-6 text-amber-600" />
-            </div>
-            <p className="text-2xl font-medium">#{stats.communityRank}</p>
-            <p className="text-sm text-muted-foreground">Community Rank</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="portfolio" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-          <TabsTrigger value="progress">Learning Progress</TabsTrigger>
-          <TabsTrigger value="achievements">Achievements</TabsTrigger>
-          <TabsTrigger value="activity">Recent Activity</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="portfolio" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>My Artwork</CardTitle>
-              <CardDescription>Submissions from your learning journey</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {portfolio.map((item) => (
-                  <Card key={item.id} className="overflow-hidden">
-                    <div className="aspect-square">
-                      <ImageWithFallback
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <CardContent className="p-4">
-                      <h4 className="font-medium mb-1">{item.title}</h4>
-                      <p className="text-sm text-muted-foreground mb-2">{item.course}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <Star className="size-3 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm">{item.rating}</span>
-                          <span className="text-xs text-muted-foreground">({item.reviews})</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">{item.date}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="progress" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Courses</CardTitle>
-              <CardDescription>Your active learning paths</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {currentCourses.map((course) => (
-                <div key={course.id} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">{course.title}</h4>
-                    <Badge variant="outline">{course.progress}% Complete</Badge>
-                  </div>
-                  <Progress value={course.progress} className="mb-3" />
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Instructor: {course.instructor}
-                    </span>
-                    <span className="text-muted-foreground">
-                      Next: {course.nextLesson}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="achievements" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Achievements</CardTitle>
-              <CardDescription>Milestones in your learning journey</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {achievements.map((achievement, index) => (
-                  <div 
-                    key={index} 
-                    className={`p-4 border rounded-lg ${achievement.earned ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200 opacity-60'}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">{achievement.icon}</div>
-                      <div>
-                        <h4 className={`font-medium ${achievement.earned ? 'text-green-800' : 'text-muted-foreground'}`}>
-                          {achievement.name}
-                        </h4>
-                        <p className={`text-sm ${achievement.earned ? 'text-green-600' : 'text-muted-foreground'}`}>
-                          {achievement.description}
-                        </p>
-                      </div>
-                      {achievement.earned && (
-                        <Badge variant="secondary" className="ml-auto bg-green-100 text-green-800">
-                          Earned
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="activity" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Your latest interactions and milestones</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-3 p-3 border rounded-lg">
-                <div className="size-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Users className="size-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Completed peer review</p>
-                  <p className="text-xs text-muted-foreground">2 hours ago • Earned 5 ✨</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 border rounded-lg">
-                <div className="size-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <BookOpen className="size-4 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Finished lesson: "Light and Shadow"</p>
-                  <p className="text-xs text-muted-foreground">1 day ago • Earned 10 ✨</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 border rounded-lg">
-                <div className="size-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Palette className="size-4 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Submitted artwork for review</p>
-                  <p className="text-xs text-muted-foreground">2 days ago • "Forest Landscape Study"</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   )
 }
