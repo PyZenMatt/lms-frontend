@@ -18,7 +18,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/figma/ui/dropdown-menu";
-import { Wallet as WalletIcon, User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
+import { User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
 import ThemeToggleIcon from "@/components/ThemeToggleIcon";
 import { getDashboardHome } from "@/lib/dashboard";
 
@@ -169,20 +169,7 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
               <div className="flex-1" />
               <div className="flex items-center gap-4">
                 <ThemeToggleIcon />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    /* navigate to wallet page */
-                    navigate("/wallet");
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <WalletIcon className="size-4" />
-                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                    {(user?.tokens ?? 0) + " ✨"}
-                  </Badge>
-                </Button>
+                {/* Wallet button removed from header per product decision */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -203,10 +190,7 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/wallet")}> 
-                      <WalletIcon className="mr-2 h-4 w-4" />
-                      <span>Wallet</span>
-                    </DropdownMenuItem>
+                    {/* Wallet entry removed from profile menu */}
                     <DropdownMenuItem onClick={() => navigate("/profile")}>
                       <UserIcon className="mr-2 h-4 w-4" />
                       <span>Profile</span>

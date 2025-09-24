@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Home, BookOpen, Users, Trophy, Palette, MessageCircle, User, UserCheck, Wallet, Bell } from "lucide-react"
+import { Home, BookOpen, Palette, User, Bell } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -14,7 +14,7 @@ import {
 } from "./ui/sidebar"
 import { Badge } from "./ui/badge"
 import { useAuth } from "./AuthContext"
-import useDashboardStats from "@/hooks/useDashboardStats";
+// useDashboardStats removed for simplified sidebar
 import { getUserFromToken } from "@/lib/auth"
 import { getUnreadCount } from "@/services/notifications";
 
@@ -27,7 +27,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
   const { user } = useAuth()
   // teacher role is intentionally not used; teacher dashboard is disabled
   const isTeacherRole = false;
-  const { stats, loading } = useDashboardStats();
+  // dashboard stats not needed for the simplified student sidebar
 
   // Display safe username: prefer name, fall back to email or id, truncate for UI, keep full value in tooltip
   const tokenUser = getUserFromToken();
@@ -39,11 +39,6 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
     { title: "Dashboard", page: "dashboard", icon: Home },
     // For admins we'll replace this item with Approve courses elsewhere; keep default for regular students
     { title: "Learning Paths", page: "courses", icon: BookOpen },
-    { title: "Peer Review", page: "peer-review", icon: UserCheck },
-    { title: "Community", page: "community", icon: Users },
-    { title: "Gallery", page: "gallery", icon: Palette },
-    { title: "Discussions", page: "discussions", icon: MessageCircle },
-    { title: "Achievements", page: "achievements", icon: Trophy },
   ]
 
   const menuItems = studentMenuItems
@@ -84,9 +79,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
     return <Badge variant="secondary" className="ml-auto bg-primary text-primary-foreground">{count}</Badge>
   }
 
-  function OpportunityBadge() {
-    return null
-  }
+  // Opportunity badge removed (teacher features disabled)
 
   return (
     <Sidebar>
@@ -106,80 +99,58 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    isActive={
-                      currentPage === item.page || 
-                      (item.page === "teacher-dashboard" && currentPage === "dashboard" && isTeacherRole) ||
-                      (item.page === "dashboard" && currentPage === "dashboard" && !isTeacherRole)
-                    }
-                  >
-                    <button 
-                      onClick={() => onPageChange(item.page)}
-                      className="w-full flex items-center gap-2"
+                {menuItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      asChild
+                      isActive={
+                        currentPage === item.page || 
+                        (item.page === "teacher-dashboard" && currentPage === "dashboard" && isTeacherRole) ||
+                        (item.page === "dashboard" && currentPage === "dashboard" && !isTeacherRole)
+                      }
                     >
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                      {item.title === "Peer Review" && !isTeacherRole && (
-                        <Badge variant="secondary" className="ml-auto bg-blue-100 text-blue-800">
-                          {loading ? '…' : (stats?.pendingReviews ?? 0)}
-                        </Badge>
-                      )}
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+                      <button 
+                        onClick={() => onPageChange(item.page)}
+                        className="w-full flex items-center gap-2"
+                      >
+                        <item.icon className="size-4" />
+                        <span>{item.title}</span>
+                      </button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => onPageChange("notifications")}
-            >
-              <Bell className="size-4" />
-              <span>Notifiche</span>
-              <UnreadBadge />
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton>
+                  <Bell className="size-4" />
+                  <span>Notifiche</span>
+                  <UnreadBadge />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
-          {/* teacher-only opportunity removed */}
-
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => onPageChange("wallet")}>
-              <Wallet className="size-4" />
-              <span>Wallet</span>
-              <Badge variant="secondary" className="ml-auto bg-purple-100 text-purple-800">
-                {user?.tokens || 0} ✨
-              </Badge>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => onPageChange("profile")}
-              tooltip={tokenFallback}
-            >
-              <User className="size-4" />
-              <span className="ml-2 overflow-hidden">
-                <span className="text-sm font-medium leading-none truncate max-w-[9rem] block" title={tokenFallback}>
-                  {user?.name ?? displayName}
-                </span>
-                <span className="text-xs leading-none text-muted-foreground truncate max-w-[9rem] block">
-                  {emailDisplay}
-                </span>
-              </span>
-              <Badge variant="outline" className="ml-auto capitalize text-xs">
-                {user?.role}
-              </Badge>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          {/* Theme toggle moved to top nav */}
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => onPageChange("profile")} tooltip={tokenFallback}>
+                  <User className="size-4" />
+                  <span className="ml-2 overflow-hidden">
+                    <span className="text-sm font-medium leading-none truncate max-w-[9rem] block" title={tokenFallback}>
+                      {user?.name ?? displayName}
+                    </span>
+                    <span className="text-xs leading-none text-muted-foreground truncate max-w-[9rem] block">
+                      {emailDisplay}
+                    </span>
+                  </span>
+                  <Badge variant="outline" className="ml-auto capitalize text-xs">
+                    {user?.role}
+                  </Badge>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+        </Sidebar>
   )
 }
