@@ -4,9 +4,8 @@ import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { Badge } from "./ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Palette, Sparkles, GraduationCap, Users } from "lucide-react"
+// Badge removed: demo accounts section deleted during rebrand
+import { Palette } from "lucide-react"
 import { useAuth } from "./AuthContext"
 
 export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "signup" }) {
@@ -24,7 +23,6 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
     email: "",
     password: "",
     confirmPassword: "",
-    role: "student" as "student" | "teacher"
   })
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -56,11 +54,12 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
       return
     }
 
+    // Force role to 'student' from the frontend — teacher signups are disabled.
     const success = await signup(
       signupForm.name,
       signupForm.email,
       signupForm.password,
-      signupForm.role
+      "student"
     )
     
     if (!success) {
@@ -73,14 +72,14 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-6">
+          <div className="text-center mb-6">
           <div className="flex items-center justify-center mb-4">
             <div className="size-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
               <Palette className="size-6 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-medium">ArtLearn</h1>
-          <p className="text-muted-foreground">Community-focused art education platform</p>
+          <h1 className="text-3xl font-medium">OpenPython</h1>
+          <p className="text-muted-foreground">Practical web development courses for builders</p>
         </div>
 
   <Tabs defaultValue={defaultTab} className="space-y-4">
@@ -93,7 +92,7 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
             <Card>
               <CardHeader>
                 <CardTitle>Welcome Back</CardTitle>
-                <CardDescription>Sign in to continue your artistic journey</CardDescription>
+                <CardDescription>Sign in to continue learning web development</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
@@ -127,26 +126,7 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
                   </Button>
                 </form>
 
-                <div className="mt-6 pt-4 border-t">
-                  <p className="text-sm text-muted-foreground mb-3">Demo accounts:</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Users className="size-4 text-blue-600" />
-                        <span className="text-sm">Student: maya@example.com</span>
-                      </div>
-                      <Badge variant="outline">247 ✨</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="size-4 text-green-600" />
-                        <span className="text-sm">Teacher: sarah@example.com</span>
-                      </div>
-                      <Badge variant="outline">1250 ✨</Badge>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">Password: any text</p>
-                </div>
+                {/* Demo accounts removed as part of rebranding to OpenPython */}
               </CardContent>
             </Card>
           </TabsContent>
@@ -154,8 +134,8 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
           <TabsContent value="signup">
             <Card>
               <CardHeader>
-                <CardTitle>Join ArtLearn</CardTitle>
-                <CardDescription>Create your account and start learning</CardDescription>
+                <CardTitle>Join OpenPython</CardTitle>
+                <CardDescription>Create your account and start learning web development</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSignup} className="space-y-4">
@@ -182,31 +162,7 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-role">I want to</Label>
-                    <Select 
-                      value={signupForm.role} 
-                      onValueChange={(value: "student" | "teacher") => setSignupForm({...signupForm, role: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="student">
-                          <div className="flex items-center gap-2">
-                            <Users className="size-4" />
-                            Learn art (Student)
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="teacher">
-                          <div className="flex items-center gap-2">
-                            <GraduationCap className="size-4" />
-                            Teach art (Teacher)
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* Teacher signup option removed — signups are students-only */}
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
                     <Input
@@ -235,15 +191,7 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
                     <p id="auth-form-error" className="text-sm text-destructive">{error}</p>
                   )}
                   
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg border border-purple-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Sparkles className="size-4 text-purple-600" />
-                      <span className="text-sm font-medium">Welcome Bonus</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {signupForm.role === 'teacher' ? 'Teachers start with 500 ✨ Creator Tokens' : 'Students start with 50 ✨ Creator Tokens'}
-                    </p>
-                  </div>
+                  {/* Welcome Bonus removed — no incentives shown on signup */}
 
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Creating account..." : "Create Account"}

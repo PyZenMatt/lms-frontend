@@ -154,10 +154,12 @@ export function useAuth(): FigmaAuthCtx {
 	};
 
 	const signup = async (name: string, email: string, password: string, role: "student" | "teacher") => {
-			// Try the real backend register endpoint first using centralized API client
-			try {
-				// Ensure we do not attach Authorization for public endpoints (avoid sending expired tokens)
-				const resp = await api.post('/v1/register/', { username: name, email, password, role }, { noAuth: true });
+				// Force role to 'student' from the shim as teacher signups are disabled
+				const roleParam: "student" | "teacher" = role === "teacher" ? "student" : role;
+				// Try the real backend register endpoint first using centralized API client
+				try {
+					// Ensure we do not attach Authorization for public endpoints (avoid sending expired tokens)
+					const resp = await api.post('/v1/register/', { username: name, email, password, role: roleParam }, { noAuth: true });
 				console.debug('[FigmaShim] register response', resp.status, resp.data ?? resp.error);
 				if (resp.ok) {
 					// eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime response from API, kept permissive
@@ -166,7 +168,8 @@ export function useAuth(): FigmaAuthCtx {
 					const loginOk = await app.login(email, password);
 					if (loginOk) {
 						try {
-							localStorage.setItem('artlearn_user', JSON.stringify({ id: data.user.id, name: data.user.username, email: data.user.email, role: data.user.role, tokens: role === 'teacher' ? 500 : 50 }));
+								// Always store student-level tokens on signup
+								localStorage.setItem('artlearn_user', JSON.stringify({ id: data.user.id, name: data.user.username, email: data.user.email, role: data.user.role, tokens: 50 }));
 						} catch (err) { console.debug('[FigmaShim] save backend user failed', err); }
 						return true;
 					}
@@ -188,8 +191,8 @@ export function useAuth(): FigmaAuthCtx {
 			id: String(Date.now()),
 			name,
 			email,
-			role,
-			tokens: role === "teacher" ? 500 : 50,
+			role: roleParam,
+			tokens: 50, // always student-level tokens
 		};
 		try { localStorage.setItem("artlearn_user", JSON.stringify(newUser)); } catch (err) { console.debug('[FigmaShim] signup save local user failed', err); }
 		setUser(newUser);
