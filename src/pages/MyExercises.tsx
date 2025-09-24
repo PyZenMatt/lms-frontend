@@ -67,8 +67,9 @@ export default function MyExercises() {
                   Stato: {e.status ?? "—"}{e.due_at ? ` • Scadenza: ${new Date(e.due_at).toLocaleString()}` : ""}
                 </div>
               </div>
-              <Link className="rounded-lg border px-3 py-1 text-sm hover:bg-accent" to={`/exercises/${e.id}/submit`}>
-                {e.status === "assigned" || e.status === "revision_requested" ? "Invia" : "Apri"}
+              {/* Redirect users to the lesson page; submitting is disabled */}
+              <Link className="rounded-lg border px-3 py-1 text-sm hover:bg-accent" to={e.lesson_id ? `/lessons/${e.lesson_id}` : "/my/exercises"}>
+                Apri istruzioni
               </Link>
             </div>
           ))}

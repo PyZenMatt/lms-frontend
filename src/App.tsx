@@ -11,7 +11,6 @@ import CourseCheckout from "./pages/CourseCheckout"
 import PaymentReturn from "./pages/PaymentReturn"
 import StudentCourse from "./pages/StudentCourse"
 import MyExercises from "./pages/MyExercises"
-import ExerciseSubmit from "./pages/ExerciseSubmit"
 import LessonPage from "./pages/LessonPage"
 import ReviewsAssigned from "./pages/ReviewsAssigned"
 import ReviewSubmission from "./pages/ReviewSubmission"
@@ -98,13 +97,10 @@ export default function App() {
             }
           />
 
+          {/* Exercise submit disabled: redirect to lesson instructions */}
           <Route
             path="/exercises/:id/submit"
-            element={
-              <ProtectedRoute>
-                <ErrorBoundary><ExerciseSubmit /></ErrorBoundary>
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/my/exercises" replace />}
           />
 
           <Route

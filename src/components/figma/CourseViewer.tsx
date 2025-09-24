@@ -39,8 +39,6 @@ import {
   CheckCircle, 
   Lock, 
   Clock, 
-  FileText, 
-  Upload,
   BookOpen,
   Target,
   // Award,
@@ -50,7 +48,7 @@ import {
 import { useAuth } from "./AuthContext"
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { markLessonComplete } from '@/services/lessons'
-import { submitExercise, listMyExercises, getMySubmission } from '@/services/exercises'
+import { listMyExercises, getMySubmission } from '@/services/exercises'
 import { useCourseOutline } from '@/hooks/useCourseOutline'
 import { ImageWithFallback } from "./figma/ImageWithFallback"
 import { toast } from "sonner"
@@ -96,15 +94,14 @@ interface Course {
 interface CourseViewerProps {
   courseId: string
   onBack: () => void
-  onNavigateToPage?: (page: string) => void
 }
 
-export function CourseViewer({ courseId, onBack, onNavigateToPage }: CourseViewerProps) {
+export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
   const { updateTokens } = useAuth()
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'content' | 'exercise'>('content')
   // Use a ref for the exercise text to avoid parent re-renders on each keystroke
-  const exerciseSubmissionRef = useRef<string>("")
+  // (submission UI removed)
   const renderCount = useRef(0)
   renderCount.current += 1
 
@@ -285,87 +282,7 @@ export function CourseViewer({ courseId, onBack, onNavigateToPage }: CourseViewe
   const currentSubmittedData = currentExId ? (submittedData[Number(currentExId)] ?? undefined) : undefined
   const isSubmitted = !!(currentLesson?.exercise?.completed || (currentExId && (submittedExercises[Number(currentExId)] || !!currentSubmittedData)))
 
-  const submitMutation = useMutation({
-    mutationFn: async ({ exerciseId, payload }: { exerciseId: number; payload: { text?: string; files?: File[] } }) => {
-      const res = await submitExercise(exerciseId, { text: payload.text, files: payload.files })
-      if (!res.ok) throw res.error || new Error('Failed to submit exercise')
-      return res.data
-    },
-    onSuccess: (_data, vars) => {
-      updateTokens(10)
-      // reset uncontrolled ref and clear the DOM value
-      exerciseSubmissionRef.current = ""
-      try { if (textareaRef.current) textareaRef.current.value = '' } catch (e) { console.debug('[CourseViewer] reset textarea value failed', e) }
-      // mark as submitted locally to disable further submissions and show submitted content
-      if (vars && typeof vars.exerciseId === 'number') {
-        setSubmittedExercises((s) => ({ ...(s ?? {}), [vars.exerciseId]: true }))
-      }
-      toast("Esercizio caricato correttamente ✨")
-      const key = ['courseOutline', Number(courseId ?? '')]
-      try {
-        qc.invalidateQueries({ queryKey: key })
-      } catch {
-        // ignore
-      }
-    },
-    onError: (err: unknown) => {
-      const msg = err && typeof err === 'object' && 'message' in err ? String((err as Record<string, unknown>)['message'] ?? String(err)) : String(err)
-      toast(String(msg))
-    },
-  })
-
-  const handleSubmitExercise = () => {
-    if (!exerciseSubmissionRef.current.trim()) {
-      toast("Please add your submission before submitting")
-      return
-    }
-    const exId = currentLesson?.exercise?.id
-    if (!exId) {
-      toast("No exercise available for this lesson")
-      return
-    }
-    if (!currentLesson?.exercise?.unlocked) {
-      toast("Exercise is locked. Complete the lesson first.")
-      return
-    }
-  submitMutation.mutate({ exerciseId: Number(exId), payload: { text: exerciseSubmissionRef.current, files: attachedFiles ?? undefined } })
-  }
-
-  // File attach handling
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const [attachedFiles, setAttachedFiles] = useState<File[] | null>(null)
-  const onAttachClick = () => {
-    fileInputRef.current?.click()
-  }
-  const onFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return
-    const files = Array.from(e.target.files)
-    // accept only PDFs
-    const pdfs = files.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'))
-    if (pdfs.length !== files.length) {
-      toast("Only PDF files are accepted. Non-PDF files were ignored.")
-    }
-    setAttachedFiles(pdfs.length ? pdfs : null)
-  }
-
-  // Autofocus textarea when opening exercise tab to avoid losing focus
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
-  useEffect(() => {
-    if (activeTab === 'exercise') {
-      // small timeout to ensure the element is mounted
-      setTimeout(() => textareaRef.current?.focus(), 50)
-    }
-  }, [activeTab, selectedLesson])
-
-  // Track textarea mount/unmount and log exerciseSubmission changes to debug focus loss
-  useEffect(() => {
-    console.debug('[CourseViewer] textarea ref at effect', { textareaRef: textareaRef.current, activeElement: document.activeElement?.tagName })
-  }, [activeTab, selectedLesson])
-
-  // keep a light debug of the ref value when needed
-  useEffect(() => {
-    console.debug('[CourseViewer] exerciseSubmissionRef at mount', { value: exerciseSubmissionRef.current, activeElement: document.activeElement?.tagName })
-  }, [])
+  // Submission functionality removed: exercises are instructions-only now.
 
   const LessonSidebar = () => (
     <div className="w-80 border-r bg-muted/20 p-4 space-y-4 overflow-y-auto">
@@ -569,12 +486,7 @@ export function CourseViewer({ courseId, onBack, onNavigateToPage }: CourseViewe
                         <h4 className="font-medium">Time Estimate</h4>
                         <Badge variant="outline">{currentLesson.exercise.timeEstimate}</Badge>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">Reward</h4>
-                        <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                          +10 ✨
-                        </Badge>
-                      </div>
+                      {/* Reward removed per UX update */}
                     </div>
                   </div>
 
@@ -613,45 +525,9 @@ export function CourseViewer({ courseId, onBack, onNavigateToPage }: CourseViewe
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <h4 className="font-medium">Submit Your Work</h4>
-                        <TextareaWithMountLogger
-                          ref={textareaRef}
-                          placeholder="Describe your exercise completion, attach images, or share your process..."
-                          defaultValue={exerciseSubmissionRef.current}
-                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                            // update ref only, avoid setState to prevent re-renders
-                            exerciseSubmissionRef.current = e.target.value
-                            console.debug('[CourseViewer] textarea onChange (ref only)', { value: e.target.value })
-                          }}
-                          onFocus={() => { console.debug('[CourseViewer] textarea onFocus') }}
-                          onBlur={() => { console.debug('[CourseViewer] textarea onBlur'); console.trace('[CourseViewer] textarea blur trace') }}
-                          className="min-h-24"
-                        />
+                      <div className="p-4 text-sm text-muted-foreground">
+                        Submissions are disabled for this exercise. Please follow the instructions provided.
                       </div>
-                        <div className="flex items-center gap-3">
-                        <Button type="button" onClick={() => handleSubmitExercise()} disabled={!!isSubmitted}>
-                          <Upload className="size-4 mr-2" />
-                          Submit Exercise
-                        </Button>
-                        <Button type="button" variant="outline" onClick={onAttachClick} disabled={!!isSubmitted}>
-                          <FileText className="size-4 mr-2" />
-                          Attach Files
-                        </Button>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          multiple
-                          accept=".pdf,application/pdf"
-                          onChange={onFilesChange}
-                          className="hidden"
-                        />
-                      </div>
-                      {attachedFiles && attachedFiles.length > 0 && (
-                        <div className="mt-2 text-sm text-muted-foreground">
-                          Attached: {attachedFiles.map(f => f.name).join(', ')}
-                        </div>
-                      )}
                     </div>
                   )}
                 </CardContent>

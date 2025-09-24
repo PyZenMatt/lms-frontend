@@ -1,5 +1,4 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
-import { Badge } from "./ui/badge"
 import { Progress } from "./ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { Trophy, Star, Users, Heart, BookOpen, Sparkles, Award, Target } from "lucide-react"
@@ -77,9 +76,9 @@ export function Achievements() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">Earned 3 days ago</p>
-                  <Badge className="bg-amber-100 text-amber-800">+15 ✨</Badge>
+                  <span className="text-sm text-muted-foreground">+15</span>
                 </div>
               </CardContent>
             </Card>
@@ -97,9 +96,9 @@ export function Achievements() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">Earned 1 week ago</p>
-                  <Badge className="bg-green-100 text-green-800">+20 ✨</Badge>
+                  <span className="text-sm text-muted-foreground">+20</span>
                 </div>
               </CardContent>
             </Card>
@@ -117,9 +116,9 @@ export function Achievements() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">Earned 2 weeks ago</p>
-                  <Badge className="bg-blue-100 text-blue-800">+10 ✨</Badge>
+                  <span className="text-sm text-muted-foreground">+10</span>
                 </div>
               </CardContent>
             </Card>
@@ -137,9 +136,9 @@ export function Achievements() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">Earned 3 weeks ago</p>
-                  <Badge className="bg-purple-100 text-purple-800">+25 ✨</Badge>
+                  <span className="text-sm text-muted-foreground">+25</span>
                 </div>
               </CardContent>
             </Card>
@@ -162,9 +161,9 @@ export function Achievements() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <Progress value={72} className="h-2" />
-                <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">7 more to go!</p>
-                  <Badge variant="outline">+50 ✨</Badge>
+                  <span className="text-sm text-muted-foreground">+50</span>
                 </div>
               </CardContent>
             </Card>
@@ -185,7 +184,7 @@ export function Achievements() {
                 <Progress value={40} className="h-2" />
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">3 more courses</p>
-                  <Badge variant="outline">+75 ✨</Badge>
+                  <span className="text-sm text-muted-foreground">+75</span>
                 </div>
               </CardContent>
             </Card>
@@ -204,7 +203,7 @@ export function Achievements() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground">Submit high-quality artwork for review</p>
-                <Badge variant="outline">+30 ✨</Badge>
+                <span className="text-sm text-muted-foreground">+30</span>
               </CardContent>
             </Card>
 
@@ -222,7 +221,7 @@ export function Achievements() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground">Reach out to moderators to propose an event</p>
-                <Badge variant="outline">+100 ✨</Badge>
+                    <span className="text-sm text-muted-foreground">+100</span>
               </CardContent>
             </Card>
           </div>

@@ -654,7 +654,7 @@ export function Wallet() {
                     </div>
                     <div className="flex justify-between">
                       <span>Submit an exercise</span>
-                      <Badge variant="secondary">+10 ✨</Badge>
+                      <span className="text-sm text-muted-foreground">+10</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Finish a course</span>
