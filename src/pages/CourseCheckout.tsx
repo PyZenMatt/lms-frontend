@@ -6,7 +6,6 @@ import { getCourse } from "../services/courses"
 import { loadStripe } from "@stripe/stripe-js"
 import type { Stripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
-import TeoDiscountWidget from "../components/checkout/TeoDiscountWidget"
 import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -47,9 +46,7 @@ export default function CourseCheckout() {
   const [clientSecret, setClientSecret] = React.useState<string | null>(null)
   const [publishableKey, setPublishableKey] = React.useState<string | null>(null)
 
-  // (discount override stored directly on summary via setSummary in onApply)
-  const [teoDiscountApplied, setTeoDiscountApplied] = React.useState<boolean>(false)
-  const [discountBreakdown, setDiscountBreakdown] = React.useState<Record<string, unknown> | null>(null)
+  // discount overrides may be provided by backend; no TEO-UI here
 
   // wallet address not needed during checkout
 
@@ -118,23 +115,15 @@ export default function CourseCheckout() {
     // 2) Creo l'intent sul BE (restituisce client_secret)
     const intentPayload: Record<string, unknown> = {}
     if (summary.discount_percent && summary.discount_percent > 0) {
-      // require the discount to be applied via widget before creating intent
-      if (!teoDiscountApplied) {
-        setSubmitting(null)
-        setError("Devi prima applicare lo sconto TEO prima di procedere al pagamento.")
-        return
-      }
-      intentPayload.use_teocoin_discount = true
+      // include discount info (if backend provided it) — do not require a client-side TEO step
       intentPayload.discount_percent = summary.discount_percent
-      // Source of truth for euro discount: prefer explicit fields (price_eur - total_eur) when available
       if (typeof summary.price_eur === 'number' && typeof summary.total_eur === 'number') {
         intentPayload.discount_eur = summary.price_eur - summary.total_eur
       } else if (typeof summary.price_eur === 'number' && typeof summary.discount_percent === 'number') {
         intentPayload.discount_eur = summary.price_eur * (summary.discount_percent / 100)
       }
     }
-    // attach server-provided breakdown when available (backend will prefer explicit values)
-    if (discountBreakdown) intentPayload.breakdown = discountBreakdown
+  // attach server-provided breakdown when available (backend will prefer explicit values)
 
     // debug: log payload so we can verify the frontend sends use_teocoin_discount or breakdown
     console.debug("[Checkout] createPaymentIntent payload:", intentPayload)
@@ -242,55 +231,7 @@ export default function CourseCheckout() {
 
         <div className="space-y-4">
           {/* Teo Discount Widget */}
-          <TeoDiscountWidget
-            priceEUR={summary.price_eur ?? (summary.total_eur ?? 0)}
-            courseId={courseId}
-            onApply={(finalPriceEUR, discountEUR, details) => {
-              // Normalize returned fields: prefer backend-provided final_price_eur/discount_eur
-              const d = (details || {}) as Record<string, unknown>;
-              const final = Number(
-                (d as Record<string, unknown>)['final_price_eur'] ?? (d as Record<string, unknown>)['finalPriceEUR'] ?? finalPriceEUR ?? summary.price_eur ?? summary.total_eur ?? 0
-              );
-              const discount = Number(
-                (d as Record<string, unknown>)['discount_eur'] ?? (d as Record<string, unknown>)['discountEUR'] ?? discountEUR ?? (typeof summary.price_eur === 'number' ? (summary.price_eur - final) : 0)
-              );
-              // robustly parse discount_percent from server breakdown (may be string)
-              let discount_percent_val: number | undefined = undefined;
-              const rawDiscountPercent = (d as Record<string, unknown>)['discount_percent'] ?? (d as Record<string, unknown>)['discountPct'] ?? (d as Record<string, unknown>)['discount'] ?? undefined;
-              if (rawDiscountPercent !== undefined) {
-                const n = Number(rawDiscountPercent);
-                if (Number.isFinite(n)) discount_percent_val = n;
-              }
-              if (discount_percent_val === undefined && typeof summary.price_eur === 'number' && summary.price_eur > 0) {
-                discount_percent_val = ((summary.price_eur - final) / summary.price_eur) * 100;
-              }
-              // Normalize teo_required into number | undefined
-              const rawTeo = (d as Record<string, unknown>)['teo_required'] ?? (d as Record<string, unknown>)['teoRequired'] ?? (d as Record<string, unknown>)['teo_spent'] ?? summary.teo_required;
-              let teo_required_parsed: number | undefined = undefined;
-              if (typeof rawTeo === 'number' && Number.isFinite(rawTeo)) {
-                teo_required_parsed = rawTeo;
-              } else if (typeof rawTeo === 'string' && rawTeo.trim() !== '' && !Number.isNaN(Number(rawTeo))) {
-                teo_required_parsed = Number(rawTeo);
-              }
-
-              setSummary((s) => ({
-                ...s,
-                total_eur: final,
-                discount_percent: typeof discount_percent_val === 'number' ? discount_percent_val : s.discount_percent,
-                teo_required: teo_required_parsed ?? s.teo_required,
-              }));
-              // persist optional server-provided breakdown so it can be forwarded to createPaymentIntent
-              try {
-                const bd = (details || {})['breakdown'] ?? details ?? null
-                if (bd) setDiscountBreakdown(bd as Record<string, unknown>)
-              } catch {
-                // ignore
-              }
-               setTeoDiscountApplied(true);
-              // optional: you can store details in state or send analytics
-              console.debug("TEO discount applied", { finalPriceEUR, discountEUR, details, normalized: { final, discount, discount_percent: discount_percent_val, teo_required: teo_required_parsed } });
-            }}
-          />
+          {/* Teo discount UI removed — platform no longer shows teocoin discount control here */}
 
           {!clientSecret ? (
             <>

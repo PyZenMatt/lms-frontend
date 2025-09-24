@@ -84,14 +84,19 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
   const availableCourses = allCourses.filter(course => !course.enrolled)
   const featuredCourses = allCourses.filter(course => course.featured)
 
-  const categories = [...new Set(allCourses.map(course => course.category))]
+  const categories = [...new Set(
+    allCourses
+      .map(course => course.category)
+      .filter((c): c is string => typeof c === 'string' && c.trim() !== '')
+  )]
 
   const filteredCourses = availableCourses.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.instructor.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesLevel = selectedLevel === "all" || course.level === selectedLevel
-    const matchesCategory = selectedCategory === "all" || course.category === selectedCategory
+    const q = searchTerm.toLowerCase()
+    const matchesSearch = (course.title || '').toLowerCase().includes(q) ||
+                         (course.description ?? '').toLowerCase().includes(q) ||
+                         (course.instructor ?? '').toLowerCase().includes(q)
+    const matchesLevel = selectedLevel === "all" || (course.level ?? 'all') === selectedLevel
+    const matchesCategory = selectedCategory === "all" || (course.category ?? 'all') === selectedCategory
     
     return matchesSearch && matchesLevel && matchesCategory
   })
@@ -160,7 +165,7 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
             Featured
           </Badge>
         )}
-        <LevelBadge level={course.level} />
+        <LevelBadge level={course.level ?? 'beginner'} />
       </div>
       <CardContent className="p-4 space-y-3">
         <div className="space-y-2">
@@ -217,7 +222,7 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
             )}
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="bg-purple-50 border-purple-200 text-purple-800">
-                {course.tokens} ✨
+                {course.tokens ?? 0} ✨
               </Badge>
               <span className="text-xs text-muted-foreground">tokens</span>
             </div>
@@ -232,12 +237,12 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
             <Button 
               size="sm" 
               onClick={() => handleEnrollCourse(course.id)}
-              disabled={(user?.tokens || 0) < course.tokens}
+              disabled={(user?.tokens || 0) < (course.tokens ?? 0)}
             >
-              {(user?.tokens || 0) < course.tokens ? (
+              {(user?.tokens || 0) < (course.tokens ?? 0) ? (
                 <>
                   <Lock className="size-3 mr-1" />
-                  Need {course.tokens - (user?.tokens || 0)} more ✨
+                  Need {(course.tokens ?? 0) - (user?.tokens || 0)} more ✨
                 </>
               ) : (
                 <>
@@ -249,7 +254,7 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
         </div>
 
         <div className="flex flex-wrap gap-1">
-          {course.tags.slice(0, 3).map((tag, index) => (
+          {(course.tags ?? []).slice(0, 3).map((tag, index) => (
             <Badge key={index} variant="outline" className="text-xs">
               {tag}
             </Badge>
