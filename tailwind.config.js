@@ -26,6 +26,12 @@ export default {
         input: "var(--input)",
         ring: "var(--ring)",
         overlay: "var(--color-overlay)",
+        /* OpenPython theme tokens */
+        "python-green-dark": "var(--python-green-dark)",
+        "python-green-light": "var(--python-green-light)",
+        "python-yellow": "var(--python-yellow)",
+        "python-ivory": "var(--python-ivory)",
+        "switch-background": "var(--switch-background)",
       },
       borderRadius: {
         lg: "var(--radius, 0.5rem)",
@@ -77,6 +83,7 @@ export default {
     { pattern: /gap-(?:gutter|gutter-lg|\d+)/ },
     { pattern: /p(?:x|y|t|b|l|r)?-(?:gutter|gutter-lg|\d+)/ },
     { pattern: /bg-(?:primary|secondary|muted|accent|card|popover)/ },
+    { pattern: /bg-(?:python-green-dark|python-green-light|python-yellow|python-ivory|switch-background)/ },
     { pattern: /text-(?:primary|secondary|muted|accent|card|popover)-foreground/ },
   ],
   plugins: [],

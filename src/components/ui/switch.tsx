@@ -26,14 +26,15 @@ export function Switch({ checked, onCheckedChange, disabled, label, className }:
       <span
         className={cn(
           "relative h-6 w-10 rounded-full transition-colors",
-          checked ? "bg-yellow-400" : "bg-slate-800"
         )}
+        style={{ backgroundColor: checked ? '#FFD43B' : '#2E3D49' }}
       >
         <span
           className={cn(
             "absolute top-1/2 h-5 w-5 -translate-y-1/2 transform rounded-full bg-white shadow transition-all",
             checked ? "left-[22px]" : "left-[2px]"
           )}
+          style={{ backgroundColor: '#F7F3EA' }}
         />
       </span>
       {label && <span className="text-sm">{label}</span>}

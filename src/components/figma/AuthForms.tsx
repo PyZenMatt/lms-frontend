@@ -5,7 +5,7 @@ import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 // Badge removed: demo accounts section deleted during rebrand
-import { Palette } from "lucide-react"
+// palette icon removed; logo was deleted from the auth header
 import { useAuth } from "./AuthContext"
 
 export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "signup" }) {
@@ -70,14 +70,9 @@ export function AuthForms({ defaultTab = "login" }: { defaultTab?: "login" | "si
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
           <div className="text-center mb-6">
-          <div className="flex items-center justify-center mb-4">
-            <div className="size-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-              <Palette className="size-6 text-white" />
-            </div>
-          </div>
           <h1 className="text-3xl font-medium">OpenPython</h1>
           <p className="text-muted-foreground">Practical web development courses for builders</p>
         </div>

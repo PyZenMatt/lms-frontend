@@ -18,7 +18,14 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     const disabledClasses = props.disabled
       ? "bg-input-background/60 text-muted-foreground border-border/60 pointer-events-none cursor-not-allowed"
-      : "text-foreground";
+      : "";
+
+    // Force input background and foreground for the login/signup inputs per design
+    const inputStyle = {
+      backgroundColor: '#2e3d49', // dark background
+      color: '#f1eee5', // light/ivory text
+      ...(props.style || {}),
+    } as React.CSSProperties;
 
     return (
       <FigmaInput
@@ -26,11 +33,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         aria-invalid={invalid ? true : undefined}
         aria-describedby={hintId}
         className={cn(
-          "focus-ring rounded-lg bg-input-background placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground transition-[color,box-shadow]",
+          "focus-ring rounded-lg placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground transition-[color,box-shadow]",
           stateClasses,
           disabledClasses,
           className,
         )}
+        style={inputStyle}
         {...props}
       />
     );
