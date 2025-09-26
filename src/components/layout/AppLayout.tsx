@@ -19,7 +19,6 @@ import {
   DropdownMenuSeparator,
 } from "@/components/figma/ui/dropdown-menu";
 import { User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
-import ThemeToggleIcon from "@/components/ThemeToggleIcon";
 import { getDashboardHome } from "@/lib/dashboard";
 
 export default function AppLayout({ children }: { children?: React.ReactNode }) {
@@ -168,7 +167,7 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
               <SidebarTrigger className="mr-4" />
               <div className="flex-1" />
               <div className="flex items-center gap-4">
-                <ThemeToggleIcon />
+                {/* Theme toggle removed - single theme enforced */}
                 {/* Wallet button removed from header per product decision */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

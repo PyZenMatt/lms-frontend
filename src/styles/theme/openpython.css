@@ -47,6 +47,14 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Sidebar color tokens — enforce the requested palette */
+  --sidebar: #2e3d49; /* base sidebar background */
+  --sidebar-foreground: #f1eee5; /* white/ivory text on sidebar */
+  --sidebar-accent: #ffd43b; /* highlight / hover background */
+  --sidebar-accent-foreground: #2e3d49; /* text color when highlighted */
+  --sidebar-border: rgba(0,0,0,0.12);
+  --sidebar-ring: rgba(255,212,59,0.25);
 }
 
 .dark {
