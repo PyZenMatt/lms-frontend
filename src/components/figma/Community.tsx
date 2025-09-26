@@ -69,8 +69,8 @@ export function Community() {
                     Share
                   </Button>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Earned 8 ✨ from community feedback
+                        <div className="text-sm text-muted-foreground">
+                          Earned 8 from community feedback
                 </div>
               </div>
             </CardContent>
@@ -105,8 +105,8 @@ export function Community() {
                   Watch Tutorial
                 </Button>
               </div>
-              <div className="text-sm text-muted-foreground">
-                🏆 Complete this tutorial to earn 15 ✨ Creator Tokens
+                      <div className="text-sm text-muted-foreground">
+                        🏆 Complete this tutorial to earn 15 Creator Tokens
               </div>
             </CardContent>
           </Card>
@@ -145,7 +145,7 @@ export function Community() {
                   </div>
                 </div>
                 <Button variant="outline" size="sm">
-                  Join Project (+20 ✨)
+                          Join Project (+20)
                 </Button>
               </div>
             </CardContent>
@@ -179,7 +179,7 @@ export function Community() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">{member.tokens} ✨</p>
+                            <p className="font-medium">{member.tokens}</p>
                     <p className="text-sm text-muted-foreground">this month</p>
                   </div>
                 </div>

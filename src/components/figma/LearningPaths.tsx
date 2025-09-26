@@ -3,15 +3,14 @@ import { Card, CardContent } from "./ui/card"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
 import { Progress } from "./ui/progress"
-import { Input } from "./ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
+// Search inputs removed — keep imports out until needed
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { 
   BookOpen, 
   Clock, 
   Users, 
   Star, 
-  Search,
+  // Search removed
   Play,
   Lock,
   Award,
@@ -84,11 +83,7 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
   const availableCourses = allCourses.filter(course => !course.enrolled)
   const featuredCourses = allCourses.filter(course => course.featured)
 
-  const categories = [...new Set(
-    allCourses
-      .map(course => course.category)
-      .filter((c): c is string => typeof c === 'string' && c.trim() !== '')
-  )]
+  // categories derived from courses (filters removed)
 
   const filteredCourses = availableCourses.filter(course => {
     const q = searchTerm.toLowerCase()
@@ -220,11 +215,12 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
             {!course.enrolled && showPrice && typeof course.price === 'number' && course.price > 0 && (
               <div className="text-sm font-semibold">{new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(course.price)}</div>
             )}
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-purple-50 border-purple-200 text-purple-800">
-                {course.tokens ?? 0} ✨
-              </Badge>
-              <span className="text-xs text-muted-foreground">tokens</span>
+              <div className="flex items-center gap-2">
+                  {/* Token price display removed from course card */}
+                  {/* <Badge variant="outline" className="bg-purple-50 border-purple-200 text-purple-800">
+                    {course.tokens ?? 0}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">tokens</span> */}
             </div>
           </div>
           
@@ -239,10 +235,10 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
               onClick={() => handleEnrollCourse(course.id)}
               disabled={(user?.tokens || 0) < (course.tokens ?? 0)}
             >
-              {(user?.tokens || 0) < (course.tokens ?? 0) ? (
+                  {(user?.tokens || 0) < (course.tokens ?? 0) ? (
                 <>
                   <Lock className="size-3 mr-1" />
-                  Need {(course.tokens ?? 0) - (user?.tokens || 0)} more ✨
+                  Need {(course.tokens ?? 0) - (user?.tokens || 0)} more
                 </>
               ) : (
                 <>
@@ -272,9 +268,7 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
           <p className="text-muted-foreground">Discover courses and advance your artistic skills</p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-            {user?.tokens || 0} ✨ Available
-          </Badge>
+          {/* Token balance display removed from header (kept logic intact) */}
         </div>
       </div>
 
@@ -282,50 +276,10 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
         <TabsList>
           <TabsTrigger value="browse">Browse Courses</TabsTrigger>
           <TabsTrigger value="enrolled">My Courses ({enrolledCourses.length})</TabsTrigger>
-          <TabsTrigger value="featured">Featured</TabsTrigger>
         </TabsList>
 
         <TabsContent value="browse" className="space-y-4">
-          {/* Search and Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search courses, instructors, or topics..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Levels</SelectItem>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      {categories.map(category => (
-                        <SelectItem key={category} value={category}>{category}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Search and filter controls removed to simplify UI for small course sets */}
 
           {/* Course Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

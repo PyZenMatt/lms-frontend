@@ -192,7 +192,7 @@ export function CommunityGallery() {
   })
 
   const handleLike = (artworkId: string) => {
-    toast("Liked artwork! ✨", {
+    toast("Liked artwork!", {
       description: "Artist earned 3 tokens from your appreciation"
     })
   }

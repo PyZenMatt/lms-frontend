@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { Upload, Eye, Award, Users, Sparkles } from "lucide-react"
 import { ImageWithFallback } from "./figma/ImageWithFallback"
 import { ReviewInterface } from "./ReviewInterface"
-import { listAssignedReviews, getSubmission, listMySubmissions, type AssignedReview, type Submission as ReviewSubmission } from "../../services/reviews"
+import { listAssignedReviews, getSubmission, type AssignedReview, type Submission as ReviewSubmission } from "../../services/reviews"
 import { MySubmissions } from "./MySubmissions"
 import { FeedbackReceived } from "./FeedbackReceived"
 import React from "react"
@@ -137,7 +137,7 @@ export function PeerReview() {
                   <CardTitle className="text-base">Ready to Review</CardTitle>
                   <CardDescription>Help your peers grow while earning Creator Tokens</CardDescription>
                 </div>
-                <Badge className="bg-green-100 text-green-800">+5 ✨ each</Badge>
+                <Badge className="bg-green-100 text-green-800">+5 each</Badge>
               </div>
             </CardHeader>
           </Card>
@@ -181,7 +181,7 @@ export function PeerReview() {
                       className="w-full"
                       onClick={() => handleStartReview(it)}
                     >
-                      Start Review (+5 ✨)
+                      Start Review (+5)
                     </Button>
                   </CardContent>
                 </Card>

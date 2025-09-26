@@ -123,9 +123,7 @@ function AppContent() {
                   className="flex items-center gap-2"
                 >
                   <WalletIcon className="size-4" />
-                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                    {user?.tokens || 0} ✨
-                  </Badge>
+                  {/* Token balance hidden */}
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

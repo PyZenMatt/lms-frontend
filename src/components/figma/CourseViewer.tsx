@@ -254,9 +254,9 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
       if (!res.ok) throw res.error || new Error('Failed to mark complete')
       return res.data
     },
-  onSuccess: () => {
+    onSuccess: () => {
       updateTokens(5)
-      toast("Lesson completed! ✨", {
+      toast("Lesson completed!", {
         description: "You earned 5 tokens. Next lesson unlocked!"
       })
       const key = ['courseOutline', Number(courseId ?? '')]
@@ -430,7 +430,7 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
             <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
               <CheckCircle className="size-5 text-green-600" />
               <span className="text-sm font-medium text-green-800">
-                Lesson Completed ✨
+                Lesson Completed
               </span>
             </div>
           )}
@@ -495,7 +495,7 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                       <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
                         <CheckCircle className="size-5 text-green-600" />
                         <span className="text-sm font-medium text-green-800">
-                          Exercise Completed ✨
+                          Exercise Completed
                         </span>
                       </div>
                       {(currentSubmittedData?.text ?? currentLesson.exercise.submission) && (

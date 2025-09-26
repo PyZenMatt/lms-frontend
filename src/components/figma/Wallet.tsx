@@ -350,8 +350,8 @@ export function Wallet() {
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-2 mb-4">
-              <span className="text-4xl font-medium">{user?.tokens || 0}</span>
-              <span className="text-xl text-muted-foreground">✨</span>
+              {/* Token balance intentionally hidden from UI; retain internal logic */}
+              <span className="text-sm text-muted-foreground">Your Creator Token balance is managed in Wallet (hidden)</span>
             </div>
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-1 text-green-600">
@@ -620,7 +620,7 @@ export function Wallet() {
                         </CardDescription>
                       </div>
                     </div>
-                    <Badge variant="outline">+{milestone.reward} ✨</Badge>
+                    <Badge variant="outline">+{milestone.reward}</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -650,7 +650,7 @@ export function Wallet() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Complete a lesson</span>
-                      <Badge variant="secondary">+5 ✨</Badge>
+                      <Badge variant="secondary">+5</Badge>
                     </div>
                     <div className="flex justify-between">
                       <span>Submit an exercise</span>
@@ -658,11 +658,11 @@ export function Wallet() {
                     </div>
                     <div className="flex justify-between">
                       <span>Finish a course</span>
-                      <Badge variant="secondary">+50 ✨</Badge>
+                      <Badge variant="secondary">+50</Badge>
                     </div>
                     <div className="flex justify-between">
                       <span>Weekly learning streak</span>
-                      <Badge variant="secondary">+15 ✨</Badge>
+                      <Badge variant="secondary">+15</Badge>
                     </div>
                   </div>
                 </div>
@@ -671,19 +671,19 @@ export function Wallet() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Peer review feedback</span>
-                      <Badge variant="secondary">+5 ✨</Badge>
+                      <Badge variant="secondary">+5</Badge>
                     </div>
                     <div className="flex justify-between">
                       <span>Helpful forum post</span>
-                      <Badge variant="secondary">+3 ✨</Badge>
+                      <Badge variant="secondary">+3</Badge>
                     </div>
                     <div className="flex justify-between">
                       <span>Mentor a student</span>
-                      <Badge variant="secondary">+20 ✨</Badge>
+                      <Badge variant="secondary">+20</Badge>
                     </div>
                     <div className="flex justify-between">
                       <span>Create a tutorial</span>
-                      <Badge variant="secondary">+100 ✨</Badge>
+                      <Badge variant="secondary">+100</Badge>
                     </div>
                   </div>
                 </div>

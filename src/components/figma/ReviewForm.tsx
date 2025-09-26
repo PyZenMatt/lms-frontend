@@ -165,7 +165,7 @@ export function ReviewForm() {
 
               <Button className="w-full" disabled={feedback.length < 20}>
                 <Send className="size-4 mr-2" />
-                Submit Review (+5 ✨)
+                Submit Review (+5)
               </Button>
             </CardContent>
           </Card>

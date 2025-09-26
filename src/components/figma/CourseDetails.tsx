@@ -539,7 +539,7 @@ export function CourseDetails({ courseId, onBack, onEdit }: CourseDetailsProps) 
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Tokens Distributed</span>
-                    <span className="font-medium">2,847 ✨</span>
+                    <span className="font-medium">2,847</span>
                   </div>
                 </div>
               </CardContent>

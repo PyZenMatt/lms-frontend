@@ -132,7 +132,7 @@ export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterf
         if (res.ok) {
           updateTokens(5)
           setSubmitted(true)
-          toast("Review submitted successfully! ✨", {
+          toast("Review submitted successfully!", {
             description: "You earned 5 tokens for helping a fellow artist grow"
           })
           // allow parent to cleanup/navigate after a short delay
@@ -418,7 +418,7 @@ export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterf
           </div>
         </div>
         <Badge variant="secondary" className="bg-green-100 text-green-800">
-          +5 ✨ for completing
+          +5 for completing
         </Badge>
       </div>
 
@@ -499,7 +499,7 @@ export function ReviewInterface({ submission, onBack, onComplete }: ReviewInterf
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <Upload className="size-4 mr-2" />
-                  {submitting ? 'Submitting…' : submitted ? 'Submitted' : 'Submit Review (+5 ✨)'}
+                  {submitting ? 'Submitting…' : submitted ? 'Submitted' : 'Submit Review (+5)'}
                 </Button>
               )}
             </div>
