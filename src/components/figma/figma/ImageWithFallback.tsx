@@ -35,8 +35,10 @@ export function ImageWithFallback(props: Props) {
   const sizingClass = className ?? 'w-full h-48'
   // add a faint border so the placeholder is visible against various
   // backgrounds (helps when the app background and placeholder are similar)
-  const placeholderClass = `${sizingClass} bg-gray-100 border border-gray-200 rounded-md`
-  return <div className={placeholderClass} style={style} aria-hidden />
+  const placeholderClass = `${sizingClass} border border-gray-200 rounded-md`
+  // ensure caller style is preserved but enforce requested background color
+  const placeholderStyle = { ...(style as React.CSSProperties || {}), backgroundColor: '#ffd43b' }
+  return <div className={placeholderClass} style={placeholderStyle} aria-hidden />
   }
 
   return <img src={src} alt={alt} className={className} style={style} {...rest} onError={handleError} />

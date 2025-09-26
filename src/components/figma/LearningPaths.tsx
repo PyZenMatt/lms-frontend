@@ -150,7 +150,10 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
         />
         {/* price badge overlay (visible even when image is fallback) - hide for enrolled courses */}
   {!course.enrolled && showPrice && typeof course.price === 'number' && course.price > 0 && (
-          <div className="absolute top-3 right-3 bg-white/90 dark:bg-black/80 px-2 py-1 rounded-md text-sm font-semibold">
+          <div
+            className="absolute top-3 right-3 px-2 py-1 rounded-md text-sm font-semibold"
+            style={{ backgroundColor: '#2e3d49', color: '#f1eee5' }}
+          >
             {new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(course.price)}
           </div>
         )}
