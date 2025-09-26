@@ -17,7 +17,7 @@ import { CourseDetails } from "../CourseDetails"
 import { useState } from "react"
 import { Button } from "../ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
-import { Badge } from "../ui/badge"
+// role badges removed from demo header
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"
 import { LogOut, User, Wallet as WalletIcon, Settings as SettingsIcon } from "lucide-react"
 import { Toaster } from "./components/ui/sonner"
@@ -141,9 +141,7 @@ function AppContent() {
                         <p className="text-xs leading-none text-muted-foreground">
                           {user?.email}
                         </p>
-                        <Badge variant="outline" className="w-fit mt-1 capitalize">
-                          {user?.role}
-                        </Badge>
+                        {/* role badge removed per design */}
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />

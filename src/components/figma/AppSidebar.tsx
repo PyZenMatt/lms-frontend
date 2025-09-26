@@ -141,9 +141,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
                       {emailDisplay}
                     </span>
                   </span>
-                  <Badge variant="outline" className="ml-auto capitalize text-xs">
-                    {user?.role}
-                  </Badge>
+                  {/* role badge removed per design */}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

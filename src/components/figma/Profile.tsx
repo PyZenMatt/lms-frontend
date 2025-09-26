@@ -5,7 +5,7 @@ import { Input } from "./ui/input"
 import { Textarea } from "./ui/textarea"
 import { Label } from "./ui/label"
 import { Button } from "./ui/button"
-import { Badge } from "./ui/badge"
+// Badge removed from profile header; keep import removed to avoid unused symbol
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Github, Linkedin, Instagram, Facebook, MapPin } from "lucide-react"
 import { getProfile, updateProfile } from "@/services/profile"
@@ -187,7 +187,7 @@ export function Profile() {
                   <AvatarFallback className="text-xl">{(profile?.username || "U").charAt(0).toUpperCase()}</AvatarFallback>
                 )}
               </Avatar>
-              <Badge variant="outline" className="capitalize">{profile?.role || 'student'}</Badge>
+              {/* role badge removed per design: hide 'student' badge */}
               <div className="mt-3 flex gap-3">
                 {(profile as ExtendedProfile)?.github && (
                   <a href={(profile as ExtendedProfile).github} target="_blank" rel="noreferrer" aria-label="GitHub">
@@ -217,6 +217,7 @@ export function Profile() {
 
             <div className="flex-1 space-y-4">
               <div>
+                {/* Row: Username / Email */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Label className="mb-1 block">Username *</Label>
@@ -230,6 +231,7 @@ export function Profile() {
                   </div>
                 </div>
 
+                {/* Row: Nome / Cognome */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div className="space-y-1">
                     <Label className="mb-1 block">Nome</Label>
@@ -241,31 +243,29 @@ export function Profile() {
                   </div>
                 </div>
 
+                {/* Bio */}
+                <div className="mt-4 space-y-1">
+                  <Label className="mb-1 block">Bio</Label>
+                  <Textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
+                </div>
+
+                {/* Professione */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <div className="space-y-1">
-                    <Label className="mb-1 block">Città</Label>
-                    <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-                  </div>
                   <div className="space-y-1">
                     <Label className="mb-1 block">Professione</Label>
                     <Input value={form.profession} onChange={(e) => setForm({ ...form, profession: e.target.value })} />
                   </div>
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">Skills (separate con virgola)</Label>
+                    <Input value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} />
+                  </div>
                 </div>
 
-                <div className="mt-4 space-y-1">
-                  <Label className="mb-1 block">Telefono</Label>
-                  <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-                </div>
-
-                <div className="mt-4 space-y-1">
-                  <Label className="mb-1 block">Website</Label>
-                  <Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
-                </div>
-
+                {/* Città / CAP */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div className="space-y-1">
-                    <Label className="mb-1 block">Via</Label>
-                    <Input value={form.via} onChange={(e) => setForm({ ...form, via: e.target.value })} />
+                    <Label className="mb-1 block">Città</Label>
+                    <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
                   </div>
                   <div className="space-y-1">
                     <Label className="mb-1 block">CAP</Label>
@@ -273,6 +273,25 @@ export function Profile() {
                   </div>
                 </div>
 
+                {/* Via */}
+                <div className="mt-4 space-y-1">
+                  <Label className="mb-1 block">Via</Label>
+                  <Input value={form.via} onChange={(e) => setForm({ ...form, via: e.target.value })} />
+                </div>
+
+                {/* Telefono / Website */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">Telefono</Label>
+                    <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="mb-1 block">Website</Label>
+                    <Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
+                  </div>
+                </div>
+
+                {/* Social: LinkedIn, GitHub, Instagram, Facebook */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div className="space-y-1">
                     <Label className="mb-1 block">LinkedIn</Label>
@@ -305,16 +324,6 @@ export function Profile() {
                       <Input value={form.facebook} onChange={(e) => setForm({ ...form, facebook: e.target.value })} />
                     </div>
                   </div>
-                </div>
-
-                <div className="mt-4 space-y-1">
-                  <Label className="mb-1 block">Bio</Label>
-                  <Textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
-                </div>
-
-                <div className="mt-4 space-y-1">
-                  <Label className="mb-1 block">Skills (separate con virgola)</Label>
-                  <Input value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} />
                 </div>
 
               </div>
