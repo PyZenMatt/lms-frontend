@@ -9,7 +9,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { SidebarTrigger, SidebarProvider } from "@/components/figma/ui/sidebar";
 import { Button } from "@/components/figma/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/figma/ui/avatar";
-import { Badge } from "@/components/figma/ui/badge";
+// Badge import removed - role label removed from profile dropdown
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -18,7 +18,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/figma/ui/dropdown-menu";
-import { User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
+import { User as UserIcon, LogOut } from "lucide-react";
 import { getDashboardHome } from "@/lib/dashboard";
 
 export default function AppLayout({ children }: { children?: React.ReactNode }) {
@@ -180,12 +180,10 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                   </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
+                      <div className="flex flex-col space-y-2">
                         <p className="text-sm font-medium leading-none">{user?.name ?? "User"}</p>
-                        <p className="text-xs leading-none text-muted-foreground">{user?.email ?? ""}</p>
-                        <Badge variant="outline" className="w-fit mt-1 capitalize">
-                          {user?.role ?? "role"}
-                        </Badge>
+                        <p className="text-xs leading-none" style={{ color: '#717182' }}>{user?.email ?? ""}</p>
+                        {/* role/badge removed per design: no extra role label in profile dropdown */}
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
@@ -194,10 +192,7 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                       <UserIcon className="mr-2 h-4 w-4" />
                       <span>Profile</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/settings")}>
-                      <SettingsIcon className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                    </DropdownMenuItem>
+                    {/* Settings removed from profile menu per request */}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => { if (typeof logout === 'function') { logout(); navigate('/login', { replace: true }); } else navigate('/login', { replace: true }); }}>
                       <LogOut className="mr-2 h-4 w-4" />

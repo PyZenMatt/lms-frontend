@@ -42,9 +42,10 @@ function AvatarFallback({ className, children }: React.ComponentProps<typeof Ava
       data-slot="avatar-fallback"
       className={cn(
         // ensure the fallback fills the avatar box and centers the initial
-        "aspect-square size-full flex items-center justify-center bg-muted text-sm font-medium text-foreground leading-none",
+        "aspect-square size-full flex items-center justify-center text-sm font-medium leading-none",
         className,
       )}
+      style={{ backgroundColor: '#ffd43b', color: '#2e3d49' }}
     >
       {children}
     </AvatarPrimitive.Fallback>
