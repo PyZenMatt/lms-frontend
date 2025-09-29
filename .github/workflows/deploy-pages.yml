@@ -23,7 +23,8 @@ jobs:
       # Opzionale: se definisci una Repository Variable VITE_API_URL, verrà usata in build
       VITE_API_URL: ${{ vars.VITE_API_URL }}
       # Forza produzione
-      NODE_ENV: production
+      NPM_CONFIG_PRODUCTION: false
+      
     steps:
       - name: Checkout
         uses: actions/checkout@v4
