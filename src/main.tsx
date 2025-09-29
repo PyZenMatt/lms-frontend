@@ -8,6 +8,11 @@ import AppQueryProvider from "./lib/queryClient";
 import { BrowserRouter } from "react-router-dom";
 // Explicit import order to ensure Preflight (base) -> tokens -> components/utilities -> overrides
 import "./styles/app.css";
+// Prevent dark mode activation to enforce single OpenPython theme
+import { initThemeProtection } from "./utils/preventDarkMode";
+
+// Initialize theme protection before React renders
+initThemeProtection();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

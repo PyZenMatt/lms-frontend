@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      // Redirige ogni 404 verso index.html, preservando il path
+      var l = window.location;
+      l.replace(l.origin + "/index.html" + l.pathname + l.search + l.hash);
+    </script>
+  </head>
+  <body></body>
+</html>

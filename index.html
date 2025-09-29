@@ -9,21 +9,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- 🌓 No-Flash Theme Boot: esegue PRIMA di React/CSS -->
+  <!-- Force single OpenPython theme - no dark mode support -->
     <script>
       (function () {
         try {
-          // saved: 'dark' | 'light' | 'system' | null
-          var saved = localStorage.getItem("theme");
-          var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-          var useDark;
-          if (saved === 'dark') useDark = true;
-          else if (saved === 'light') useDark = false;
-          else useDark = prefersDark; // saved === 'system' or null -> follow OS
-          var root = document.documentElement; // <html>
-          if (useDark) root.classList.add("dark");
-          root.style.colorScheme = useDark ? "dark" : "light";
-        } catch (e) {}
+          // Force single theme - remove any dark class and prevent browser preferences from affecting theme
+          var root = document.documentElement;
+          root.classList.remove("dark");
+          root.style.colorScheme = "light";
+          
+          // Clean up any theme storage since we only use one theme now
+          localStorage.removeItem("theme");
+          
+          console.debug('OpenPython Theme: Single theme enforced, dark mode disabled');
+        } catch (e) {
+          console.debug('Theme initialization error:', e);
+        }
       })();
     </script>
   </head>
