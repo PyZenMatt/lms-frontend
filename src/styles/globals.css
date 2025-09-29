@@ -5,7 +5,7 @@
 .focus-ring{
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring;
 }
-@custom-variant dark (&:is(.dark *));
+/* Dark mode disabled - single OpenPython theme only */
 
 :root {
   --font-size: 14px;
@@ -74,7 +74,7 @@
   --shadow-card: 0 6px 20px rgba(2,6,23,0.08);
   --color-overlay: #000000;
 
-  /* Token HSL completi. Varianti gestite da .dark su <html>. Obiettivo: alto contrasto per primary/accent e foreground abbinati. */
+  /* Token HSL completi. Single OpenPython theme - no variants. Obiettivo: alto contrasto per primary/accent e foreground abbinati. */
   /* Base */
   --background-hsl: hsl(0 0% 100%);
   --foreground-hsl: hsl(222.2 84% 4.9%);
@@ -104,78 +104,7 @@
   --radius-hsl: 0.5rem;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --font-weight-medium: 500;
-  --font-weight-normal: 400;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
-  /* do not override --font-sans in dark mode; prefer the single Inter-based stack above */
-  --shadow-xs: 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
-  --shadow-default: 0 1px 6px rgba(0,0,0,0.12);
-  --shadow-md: 0 4px 8px rgba(0,0,0,0.12);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,0.14);
-  --shadow-xl: 0 20px 25px rgba(0,0,0,0.16);
-  --shadow-2xl: 0 25px 50px rgba(0,0,0,0.18);
-  --shadow-card: 0 6px 20px rgba(2,6,23,0.12);
-
-  /* Token HSL completi. Varianti gestite da .dark su <html>. Obiettivo: alto contrasto per primary/accent e foreground abbinati. */
-  /* Base */
-  --background-hsl: hsl(222.2 84% 4.9%);
-  --foreground-hsl: hsl(210 40% 98%);
-  /* Surfaces */
-  --card-hsl: hsl(222.2 84% 4.9%);
-  --card-foreground-hsl: hsl(210 40% 98%);
-  --popover-hsl: hsl(222.2 84% 4.9%);
-  --popover-foreground-hsl: hsl(210 40% 98%);
-  /* Borders / inputs */
-  --border-hsl: hsl(217.2 32.6% 17.5%);
-  --input-hsl: hsl(217.2 32.6% 17.5%);
-  --ring-hsl: hsl(217.2 32.6% 17.5%);
-  /* Primary */
-  --primary-hsl: hsl(217.2 91.2% 59.8%);
-  --primary-foreground-hsl: hsl(222.2 47.4% 11.2%);
-  /* Secondary / Muted / Accent */
-  --secondary-hsl: hsl(217.2 32.6% 17.5%);
-  --secondary-foreground-hsl: hsl(210 40% 98%);
-  --muted-hsl: hsl(217.2 32.6% 17.5%);
-  --muted-foreground-hsl: hsl(215 20.2% 65.1%);
-  --accent-hsl: hsl(217.2 32.6% 17.5%);
-  --accent-foreground-hsl: hsl(210 40% 98%);
-  /* Danger */
-  --destructive-hsl: hsl(0 62.8% 30.6%);
-  --destructive-foreground-hsl: hsl(0 85.7% 97.3%);
-}
+/* Dark theme styles removed - using single OpenPython theme */
 
 @theme inline {
   --color-background: var(--background);

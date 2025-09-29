@@ -45,6 +45,9 @@ jobs:
         run: |
           echo "corsi.openpython.it" > dist/CNAME
 
+      - name: Copy SPA fallback (index -> 404)
+        run: cp dist/index.html dist/404.html
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

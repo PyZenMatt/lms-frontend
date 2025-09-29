@@ -3,33 +3,42 @@ import { useCallback, useEffect, useState } from "react";
 type Theme = "light" | "dark";
 const STORAGE_KEY = "theme";
 
+// useTheme hook disabled - single OpenPython theme enforced
 function getInitialTheme(): Theme {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === "light" || saved === "dark") return saved;
-  } catch {}
-  if (typeof window !== "undefined" && window.matchMedia) {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
+  // Always return light since we only use OpenPython theme
   return "light";
 }
 
 export default function useTheme() {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
-  const isDark = theme === "dark";
+  // Fixed to light theme - no switching allowed
+  const [theme] = useState<Theme>("light");
+  const isDark = false; // Always false since we don't use dark mode
 
   useEffect(() => {
+    // Prevent any theme switching - ensure no dark class
     const root = document.documentElement;
-    root.classList.toggle("dark", isDark);
-    root.style.colorScheme = isDark ? "dark" : "light";
+    root.classList.remove("dark");
+    root.style.colorScheme = "light";
+    
+    // Clear any theme storage since we only use one theme
     try {
-      localStorage.setItem(STORAGE_KEY, theme);
+      localStorage.removeItem(STORAGE_KEY);
     } catch {}
-  }, [theme, isDark]);
+  }, []);
 
-  const setLight = useCallback(() => setTheme("light"), []);
-  const setDark = useCallback(() => setTheme("dark"), []);
-  const toggle = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), []);
+  // All these functions are no-ops since we don't allow theme switching
+  const setLight = useCallback(() => {
+    console.debug('[useTheme] Theme switching disabled - using single OpenPython theme');
+  }, []);
+  const setDark = useCallback(() => {
+    console.debug('[useTheme] Theme switching disabled - using single OpenPython theme');
+  }, []);
+  const toggle = useCallback(() => {
+    console.debug('[useTheme] Theme switching disabled - using single OpenPython theme');
+  }, []);
+  const setTheme = useCallback(() => {
+    console.debug('[useTheme] Theme switching disabled - using single OpenPython theme');
+  }, []);
 
   return { theme, isDark, setLight, setDark, toggle, setTheme };
 }

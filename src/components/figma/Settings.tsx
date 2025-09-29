@@ -54,9 +54,9 @@ export function Settings() {
   })
 
   const handleDarkModeToggle = () => {
-    setIsDarkMode(!isDarkMode)
-    document.documentElement.classList.toggle('dark')
-    toast(isDarkMode ? "Switched to light mode" : "Switched to dark mode")
+    // Dark mode disabled - single OpenPython theme enforced
+    console.debug('[Settings] Dark mode toggle disabled - using single OpenPython theme');
+    toast("Theme switching disabled - using single OpenPython theme")
   }
 
   const handleSettingChange = (key: string, value: any) => {
