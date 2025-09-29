@@ -474,7 +474,7 @@ export function CourseViewer({ courseId, onBack }: CourseViewerProps) {
                   <CardDescription>{currentLesson.exercise.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div>
                       <h4 className="font-medium mb-2">Instructions</h4>
                       <div className="bg-muted/50 p-4 rounded-lg">

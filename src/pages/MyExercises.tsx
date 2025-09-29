@@ -68,7 +68,7 @@ export default function MyExercises() {
                 </div>
               </div>
               {/* Redirect users to the lesson page; submitting is disabled */}
-              <Link className="rounded-lg border px-3 py-1 text-sm hover:bg-accent" to={e.lesson_id ? `/lessons/${e.lesson_id}` : "/my/exercises"}>
+              <Link className="rounded-lg border px-3 py-1 text-sm hover:bg-python-yellow hover:text-[#2e3d49]" to={e.lesson_id ? `/lessons/${e.lesson_id}` : "/my/exercises"}>
                 Apri istruzioni
               </Link>
             </div>

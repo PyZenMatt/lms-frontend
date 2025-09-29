@@ -10,10 +10,12 @@ interface DashboardProps {
 
 import useDashboardStats from "@/hooks/useDashboardStats";
 import { useNavigate } from "react-router-dom";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export function Dashboard({ onContinueCourse, onNavigateToPage }: DashboardProps) {
   const { stats, loading } = useDashboardStats();
   const navigate = useNavigate();
+  const currentUser = useCurrentUser();
 
   // stats used only for enrolled courses listing
 
@@ -21,8 +23,8 @@ export function Dashboard({ onContinueCourse, onNavigateToPage }: DashboardProps
     <div className="space-y-6">
       {/* Welcome Section (simplified) */}
       <div>
-        <h1>Welcome back, Maya!</h1>
-        <p className="text-muted-foreground">Continue your artistic journey and connect with the community</p>
+        <h1>Welcome back, {currentUser?.name || 'User'}!</h1>
+        <p className="text-muted-foreground">Continue your web developer journey and connect with me and other developers!</p>
       </div>
 
       {/* Continue Learning (keep the course list area) */}
