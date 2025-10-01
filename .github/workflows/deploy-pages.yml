@@ -38,8 +38,15 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      - name: Print VITE_API_URL
+        run: |
+          echo "VITE_API_URL=${VITE_API_URL:-<not-set>}"
+          node -e "console.log('process.env.VITE_API_URL=', process.env.VITE_API_URL || '<not-set>')"
+
       - name: Build
-        run: npm run build
+        run: |
+          echo "Building with VITE_API_URL=${VITE_API_URL:-<not-set>}"
+          npm run build
 
       - name: Add CNAME to dist
         run: |

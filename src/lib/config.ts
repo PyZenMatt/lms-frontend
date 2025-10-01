@@ -1,7 +1,12 @@
 // src/lib/config.ts
 // Base URL resiliente: legge VITE_API_BASE_URL o fallback a window.location.origin in runtime.
 // Vogliamo uno schema coerente: API.base finirà con `/api/v1` (Schema B: BASE = origin + /api, V1 = BASE + /v1).
-const API_ORIGIN = ((import.meta as any).env?.VITE_API_BASE_URL ?? (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/+$/, "");
+// Prefer the env var used in the GH workflow (VITE_API_URL). Keep backwards
+// compatibility with VITE_API_BASE_URL and finally fall back to window.origin
+// so local dev still works.
+type ViteEnv = { [key: string]: string | undefined } & { VITE_API_URL?: string; VITE_API_BASE_URL?: string };
+const _env = (import.meta as unknown as { env: ViteEnv }).env;
+const API_ORIGIN = ((_env?.VITE_API_URL ?? _env?.VITE_API_BASE_URL ?? (typeof window !== 'undefined' ? window.location.origin : '')) as string).replace(/\/+$/, "");
 const BASE = API_ORIGIN.endsWith("/api") ? API_ORIGIN : `${API_ORIGIN}/api`;
 const V1 = BASE.endsWith("/v1") ? BASE : `${BASE}/v1`;
 
