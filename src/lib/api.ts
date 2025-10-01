@@ -7,6 +7,7 @@
 
 import eventBus from "./eventBus";
 import { showToast as showToastLocal } from "./toast";
+import { API_BASE_URL } from "./config";
 
 export type ApiResult<T = any> = {
   ok: boolean;
@@ -30,10 +31,9 @@ type RequestOptions = {
   [k: string]: unknown;
 };
 
-// base "origin" of the API (without trailing slash). Prefer Vite env, fall back to window.location.origin.
-// We pick Schema B: BASE = origin + '/api' and ensure we don't introduce a duplicate '/api'.
-const API_ORIGIN = ((import.meta as any)?.env?.VITE_API_BASE_URL ?? window.location.origin).replace(/\/+$/, "");
-const BASE = API_ORIGIN.endsWith("/api") ? API_ORIGIN : `${API_ORIGIN}/api`;
+// Use unified API base from src/lib/config.ts (prefers VITE_API_URL at build time).
+// API_BASE_URL is normalized (no trailing slash) and already contains '/api' when appropriate.
+const BASE = API_BASE_URL.replace(/\/+$/, "");
 
 // SimpleJWT refresh endpoint path (relative to BASE).
 // Backend exposes JWT refresh at /api/v1/token/refresh/ (see authentication.urls)
