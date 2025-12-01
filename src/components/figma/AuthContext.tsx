@@ -7,6 +7,7 @@ import { API } from "@/lib/config";
 import { api } from "@/lib/api";
 import { getProfile } from "@/services/profile";
 import { getDbWallet } from "@/services/wallet";
+import { getChallenge, linkWallet } from "@/features/wallet/walletApi";
 
 type FigmaUser = {
 	id: string;
@@ -210,22 +211,59 @@ export function useAuth(): FigmaAuthCtx {
 	};
 
 	const connectWallet = async () => {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		if (typeof window !== "undefined" && (window as any).ethereum) {
+			try {
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				if (typeof window !== "undefined" && (window as any).ethereum) {
-				try {
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					const eth = (window as any).ethereum as { request: (opts: { method: string }) => Promise<string[]> } | undefined;
+				const eth = (window as any).ethereum as { request: (opts: { method: string; params?: unknown[] }) => Promise<unknown> } | undefined;
 				if (!eth) return false;
-				const accounts = await eth.request({ method: "eth_requestAccounts" });
-				if (accounts && accounts.length > 0 && user) {
-					const updated = { ...user, walletAddress: accounts[0] } as FigmaUser;
+				
+				// Step 1: Connect to MetaMask and get address
+				const accounts = await eth.request({ method: "eth_requestAccounts" }) as string[];
+				if (!accounts || accounts.length === 0) return false;
+				const address = accounts[0];
+				
+				// Step 2: Request challenge from backend
+				const challengeRes = await getChallenge();
+				if (!challengeRes.ok || !challengeRes.data) {
+					console.error("[FigmaShim] connectWallet: challenge failed", challengeRes);
+					return false;
+				}
+				
+				const message = challengeRes.data.message || `Sign to link wallet. Nonce: ${challengeRes.data.nonce}`;
+				
+				// Step 3: Sign message with MetaMask
+				const signature = await eth.request({
+					method: "personal_sign",
+					params: [message, address],
+				}) as string;
+				
+				if (!signature) {
+					console.error("[FigmaShim] connectWallet: signature rejected");
+					return false;
+				}
+				
+				// Step 4: Link wallet via backend API
+				const linkRes = await linkWallet(address, signature);
+				if (!linkRes.ok) {
+					console.error("[FigmaShim] connectWallet: link failed", linkRes);
+					return false;
+				}
+				
+				// Step 5: Update local user state
+				if (user) {
+					const updated = { ...user, walletAddress: address } as FigmaUser;
 					setUser(updated);
 					try {
 						localStorage.setItem("artlearn_user", JSON.stringify(updated));
 					} catch (err) { console.debug("[FigmaShim] connectWallet: save user failed", err); }
-					return true;
 				}
-			} catch (err) { console.debug("[FigmaShim] connectWallet failed", err); }
+				
+				console.info("[FigmaShim] connectWallet: wallet linked successfully", address);
+				return true;
+			} catch (err) { 
+				console.error("[FigmaShim] connectWallet failed", err);
+			}
 		}
 		return false;
 	};
