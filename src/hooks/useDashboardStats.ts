@@ -24,11 +24,13 @@ export type DashboardStats = {
 
 export default function useDashboardStats() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const enrolledQuery = useEnrolledCourses(1, 100)
   const [enriching, setEnriching] = useState(false)
+
+  // Loading is true when the query is loading OR when we're enriching
+  const loading = enrolledQuery.isLoading || enriching
 
   useEffect(() => {
     let mounted = true

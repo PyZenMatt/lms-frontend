@@ -176,7 +176,7 @@ export function CommunityGallery() {
     }
   ]
 
-  const categories = [...new Set(artworks.map(art => art.category))]
+  const categories = [...new Set(artworks.map(art => art.category))].filter(c => c && c.trim() !== '')
   const featuredArtworks = artworks.filter(art => art.featured)
   const popularArtworks = [...artworks].sort((a, b) => b.likes - a.likes)
   const recentArtworks = [...artworks].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())

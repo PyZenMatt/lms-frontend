@@ -84,7 +84,7 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
   const availableCourses = allCourses.filter(course => !course.enrolled)
   const featuredCourses = allCourses.filter(course => course.featured)
 
-  const categories = [...new Set(allCourses.map(course => course.category))]
+  const categories = [...new Set(allCourses.map(course => course.category))].filter(c => c && c.trim() !== '')
 
   const filteredCourses = availableCourses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -249,7 +249,7 @@ export function LearningPaths({ onContinueCourse }: LearningPathsProps) {
         </div>
 
         <div className="flex flex-wrap gap-1">
-          {course.tags.slice(0, 3).map((tag, index) => (
+          {(course.tags || []).slice(0, 3).map((tag, index) => (
             <Badge key={index} variant="outline" className="text-xs">
               {tag}
             </Badge>
