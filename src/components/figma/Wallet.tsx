@@ -528,12 +528,6 @@ export function Wallet() {
           <h1>Your Wallet</h1>
           <p className="text-muted-foreground">Manage your Creator Tokens and rewards</p>
         </div>
-        {!user?.walletAddress && (
-          <Button onClick={handleConnectWallet} disabled={isConnecting}>
-            <WalletIcon className="size-4 mr-2" />
-            {isConnecting ? "Connecting..." : "Connect MetaMask"}
-          </Button>
-        )}
       </div>
 
       {/* Token Balance Overview */}
