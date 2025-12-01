@@ -35,7 +35,7 @@ async function tryPost<T>(paths: string[], body?: unknown) {
 
 export async function getChallenge(): Promise<{ ok: true; data: WalletChallenge } | { ok: false; status: number; error?: unknown }> {
   // Direct HTTP implementation to avoid delegating back to wallet service module
-  const paths = ["/api/v1/users/me/wallet/challenge/", "/v1/users/me/wallet/challenge/", "/users/me/wallet/challenge/"];
+  const paths = ["/api/v1/wallet/challenge/", "/v1/wallet/challenge/", "/api/v1/users/me/wallet/challenge/", "/users/me/wallet/challenge/"];
   for (const p of paths) {
     const res = await api.post<Record<string, unknown>>(p, {});
     if (res.ok) {
@@ -51,7 +51,7 @@ export async function getChallenge(): Promise<{ ok: true; data: WalletChallenge 
 }
 
 export async function linkWallet(address: string, signature: string): Promise<{ ok: true; data: WalletLinkResponse } | { ok: false; status: number; error?: unknown }> {
-  const paths = ["/api/v1/users/me/wallet/link/", "/v1/users/me/wallet/link/", "/users/me/wallet/link/"];
+  const paths = ["/api/v1/wallet/link/", "/v1/wallet/link/", "/api/v1/users/me/wallet/link/", "/users/me/wallet/link/"];
   const payload = { address, signature } as Record<string, unknown>;
   for (const p of paths) {
     const res = await api.post<Record<string, unknown>>(p, payload);
