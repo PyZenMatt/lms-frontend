@@ -368,6 +368,42 @@ export async function refreshBalance(): Promise<Result<WalletInfo>> {
   return getWallet();
 }
 
+/**
+ * Submit burn deposit to backend for verification and DB credit
+ * POST /api/v1/teocoin/burn-deposit/
+ * body: { transaction_hash: string, amount: string }
+ */
+export async function submitBurnDeposit(tx_hash: string, amount: string): Promise<Result<{ success: boolean; new_balance?: number; transaction_id?: number; error?: string }>> {
+  if (!tx_hash || typeof tx_hash !== 'string') return { ok: false, status: 400, error: 'tx_hash required' };
+  if (!amount || Number(amount) <= 0) return { ok: false, status: 400, error: 'amount must be > 0' };
+  
+  const payload = { transaction_hash: tx_hash, amount: String(amount) };
+  const endpoints = [
+    "/api/v1/teocoin/burn-deposit/",
+    "/v1/teocoin/burn-deposit/",
+    "/api/teocoin/burn-deposit/",
+  ];
+  return tryPost<{ success: boolean; new_balance?: number; transaction_id?: number; error?: string }>(endpoints, payload);
+}
+
+/**
+ * Request withdrawal from DB balance to MetaMask wallet (server-side mint)
+ * POST /api/v1/teocoin/withdraw/
+ * body: { amount: string, wallet_address: string }
+ */
+export async function requestWithdraw(amount: string, wallet_address: string): Promise<Result<{ success: boolean; withdrawal_id?: number; transaction_hash?: string; status?: string; error?: string }>> {
+  if (!amount || Number(amount) <= 0) return { ok: false, status: 400, error: 'amount must be > 0' };
+  if (!wallet_address) return { ok: false, status: 400, error: 'wallet_address required' };
+  
+  const payload = { amount: String(amount), wallet_address };
+  const endpoints = [
+    "/api/v1/teocoin/withdraw/",
+    "/v1/teocoin/withdraw/",
+    "/api/teocoin/withdraw/",
+  ];
+  return tryPost<{ success: boolean; withdrawal_id?: number; transaction_hash?: string; status?: string; error?: string }>(endpoints, payload);
+}
+
 // Delegates for wallet connect / SIWE-lite helpers — keep facade-only functions
 
 /**

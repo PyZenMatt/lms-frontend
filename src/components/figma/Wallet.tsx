@@ -9,13 +9,24 @@ import {
   Sparkles, 
   Copy, 
   TrendingUp,
-  Target
+  Target,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  ExternalLink,
+  AlertCircle,
+  Loader2
 } from "lucide-react"
 import { useAuth } from "./AuthContext"
 import { toast } from "sonner"
-import { getTransactions, getDbWallet } from "../../services/wallet"
+import { getTransactions, getDbWallet, submitBurnDeposit, requestWithdraw, getWallet } from "../../services/wallet"
 import { getTxStatus } from "../../features/wallet/walletApi"
 import type { WalletTransaction } from "../../services/wallet"
+import { useWeb3 } from "@/web3/context"
+import { burnTokens } from "onchain/ethersWeb3"
+import Input from "@/components/ui/input"
+
+// Polygonscan base URL for Amoy testnet
+const POLYGONSCAN_BASE = "https://amoy.polygonscan.com/tx/"
 
 export function Wallet() {
   const { user, connectWallet, isTeacher } = useAuth()
@@ -45,6 +56,197 @@ export function Wallet() {
 
   const formatWalletAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
+  }
+
+  // Web3 context for connected wallet
+  const { address: connectedAddress, isConnected, getContract } = useWeb3()
+
+  // DB balance state
+  const [dbBalance, setDbBalance] = useState<number>(0)
+  const [onChainBalance, setOnChainBalance] = useState<number | null>(null)
+  const [loadingBalances, setLoadingBalances] = useState(true)
+
+  // Deposit state
+  const [depositAmount, setDepositAmount] = useState("")
+  const [isDepositing, setIsDepositing] = useState(false)
+  const [depositTxHash, setDepositTxHash] = useState<string | null>(null)
+
+  // Withdraw state
+  const [withdrawAmount, setWithdrawAmount] = useState("")
+  const [isWithdrawing, setIsWithdrawing] = useState(false)
+  const [withdrawTxHash, setWithdrawTxHash] = useState<string | null>(null)
+
+  // Linked wallet address (from user profile)
+  const linkedWalletAddress = user?.walletAddress || null
+
+  // Wallet mismatch check
+  const walletMismatch = isConnected && linkedWalletAddress && 
+    connectedAddress?.toLowerCase() !== linkedWalletAddress.toLowerCase()
+
+  // Fetch balances
+  const fetchBalances = useCallback(async () => {
+    setLoadingBalances(true)
+    try {
+      // Fetch DB balance
+      const walletRes = await getWallet()
+      if (walletRes.ok && walletRes.data) {
+        setDbBalance(walletRes.data.balance_teo || 0)
+      }
+
+      // Fetch on-chain balance if connected
+      if (isConnected && connectedAddress) {
+        try {
+          const contract = await getContract()
+          if (contract) {
+            const balanceWei = await contract.balanceOf(connectedAddress)
+            const decimals = await contract.decimals()
+            const balanceNum = Number(balanceWei) / Math.pow(10, Number(decimals))
+            setOnChainBalance(balanceNum)
+          }
+        } catch (e) {
+          console.debug("[Wallet] Failed to fetch on-chain balance", e)
+          setOnChainBalance(null)
+        }
+      }
+    } catch (e) {
+      console.debug("[Wallet] Failed to fetch balances", e)
+    } finally {
+      setLoadingBalances(false)
+    }
+  }, [isConnected, connectedAddress, getContract])
+
+  // Fetch balances on mount and when connection changes
+  useEffect(() => {
+    fetchBalances()
+  }, [fetchBalances])
+
+  // Handle Deposit (Burn → Backend verify → DB credit)
+  const handleDeposit = async () => {
+    // Validation
+    if (!linkedWalletAddress) {
+      toast.error("Nessun wallet collegato al tuo account. Collega prima il wallet.")
+      return
+    }
+
+    if (!isConnected || !connectedAddress) {
+      toast.error("Connetti prima il wallet MetaMask")
+      return
+    }
+
+    if (walletMismatch) {
+      toast.error(`Il wallet connesso (${formatWalletAddress(connectedAddress)}) non corrisponde al wallet collegato (${formatWalletAddress(linkedWalletAddress)}). Connetti il wallet corretto.`)
+      return
+    }
+
+    const amount = Number(depositAmount)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error("Inserisci un importo valido maggiore di 0")
+      return
+    }
+
+    if (onChainBalance !== null && amount > onChainBalance) {
+      toast.error(`Saldo on-chain insufficiente. Disponibile: ${onChainBalance.toFixed(4)} TEO`)
+      return
+    }
+
+    setIsDepositing(true)
+    setDepositTxHash(null)
+
+    try {
+      // Step 1: Burn tokens on-chain (user pays gas)
+      toast.info("Conferma la transazione burn nel wallet...")
+      const burnRes = await burnTokens(depositAmount)
+      
+      if (!burnRes.ok) {
+        if (burnRes.error === 'user_rejected') {
+          toast.error("Transazione annullata dall'utente")
+        } else {
+          toast.error(`Burn fallito: ${burnRes.error}`)
+        }
+        setIsDepositing(false)
+        return
+      }
+
+      const txHash = burnRes.hash
+      setDepositTxHash(txHash)
+      toast.success("Burn completato! Verifica in corso...", {
+        description: `TX: ${txHash.slice(0, 10)}...`,
+        action: {
+          label: "Vedi su Polygonscan",
+          onClick: () => window.open(`${POLYGONSCAN_BASE}${txHash}`, "_blank")
+        }
+      })
+
+      // Step 2: Submit to backend for verification
+      const verifyRes = await submitBurnDeposit(txHash, depositAmount)
+      
+      if (verifyRes.ok && verifyRes.data?.success) {
+        toast.success("Deposito completato!", {
+          description: `${depositAmount} TEO accreditati al tuo saldo DB`
+        })
+        setDepositAmount("")
+        // Refresh balances
+        await fetchBalances()
+      } else {
+        const errorMsg = verifyRes.data?.error || verifyRes.error || "Verifica fallita"
+        toast.error(`Verifica deposito fallita: ${errorMsg}`)
+      }
+    } catch (e) {
+      toast.error(`Errore deposito: ${String(e)}`)
+    } finally {
+      setIsDepositing(false)
+    }
+  }
+
+  // Handle Withdraw (DB debit → Server mint → User wallet)
+  const handleWithdraw = async () => {
+    // Validation
+    if (!linkedWalletAddress) {
+      toast.error("Nessun wallet collegato al tuo account. Collega prima il wallet.")
+      return
+    }
+
+    const amount = Number(withdrawAmount)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error("Inserisci un importo valido maggiore di 0")
+      return
+    }
+
+    if (amount > dbBalance) {
+      toast.error(`Saldo DB insufficiente. Disponibile: ${dbBalance.toFixed(4)} TEO`)
+      return
+    }
+
+    setIsWithdrawing(true)
+    setWithdrawTxHash(null)
+
+    try {
+      toast.info("Richiesta prelievo in corso...")
+      const res = await requestWithdraw(withdrawAmount, linkedWalletAddress)
+      
+      if (res.ok && res.data?.success) {
+        const txHash = res.data.transaction_hash
+        setWithdrawTxHash(txHash || null)
+        
+        toast.success("Prelievo completato!", {
+          description: `${withdrawAmount} TEO inviati al tuo wallet`,
+          action: txHash ? {
+            label: "Vedi su Polygonscan",
+            onClick: () => window.open(`${POLYGONSCAN_BASE}${txHash}`, "_blank")
+          } : undefined
+        })
+        setWithdrawAmount("")
+        // Refresh balances
+        await fetchBalances()
+      } else {
+        const errorMsg = res.data?.error || res.error || "Prelievo fallito"
+        toast.error(`Prelievo fallito: ${errorMsg}`)
+      }
+    } catch (e) {
+      toast.error(`Errore prelievo: ${String(e)}`)
+    } finally {
+      setIsWithdrawing(false)
+    }
   }
 
   // Real transaction history (fetched)
@@ -336,29 +538,29 @@ export function Wallet() {
 
       {/* Token Balance Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="md:col-span-2 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+        <Card className="md:col-span-2 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 text-gray-900">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
               <div className="size-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                 <Sparkles className="size-6 text-white" />
               </div>
               <div>
-                <CardTitle>Creator Token Balance</CardTitle>
-                <CardDescription>Your learning and community contributions</CardDescription>
+                <CardTitle className="text-gray-900">Creator Token Balance</CardTitle>
+                <CardDescription className="text-gray-600">Your learning and community contributions</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-2 mb-4">
-              <span className="text-4xl font-medium">{user?.tokens || 0}</span>
-              <span className="text-xl text-muted-foreground">✨</span>
+              <span className="text-4xl font-medium text-gray-900">{user?.tokens || 0}</span>
+              <span className="text-xl text-gray-500">✨</span>
             </div>
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-1 text-green-600">
                 <TrendingUp className="size-4" />
                 <span>+23 this week</span>
               </div>
-              <div className="text-muted-foreground">
+              <div className="text-gray-600">
                 Rank #{42} in community
               </div>
             </div>
@@ -444,6 +646,216 @@ export function Wallet() {
             </CardContent>
           </Card>
         ) : null}
+      </div>
+
+      {/* Deposit & Withdraw Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Deposit Card */}
+        <Card className="border-green-200">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <div className="size-10 bg-green-100 rounded-full flex items-center justify-center">
+                <ArrowDownToLine className="size-5 text-green-600" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Deposita TeoCoin</CardTitle>
+                <CardDescription>Burn on-chain → Accredito DB</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Balance display */}
+            <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Saldo On-Chain:</span>
+                <span className="font-medium">
+                  {loadingBalances ? (
+                    <Loader2 className="size-4 animate-spin inline" />
+                  ) : onChainBalance !== null ? (
+                    `${onChainBalance.toFixed(4)} TEO`
+                  ) : (
+                    "—"
+                  )}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Saldo DB:</span>
+                <span className="font-medium">{dbBalance.toFixed(4)} TEO</span>
+              </div>
+            </div>
+
+            {/* Wallet mismatch warning */}
+            {walletMismatch && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                <AlertCircle className="size-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-800">
+                  <p className="font-medium">Wallet non corrispondente</p>
+                  <p className="text-xs mt-1">
+                    Connesso: {connectedAddress ? formatWalletAddress(connectedAddress) : "—"}
+                    <br />
+                    Collegato: {linkedWalletAddress ? formatWalletAddress(linkedWalletAddress) : "—"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Deposit form */}
+            <div className="space-y-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium">Importo da depositare</label>
+                <Input
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  placeholder="es. 10.00"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  disabled={isDepositing}
+                />
+              </div>
+              <Button
+                className="w-full"
+                onClick={handleDeposit}
+                disabled={isDepositing || !isConnected || !linkedWalletAddress || walletMismatch}
+              >
+                {isDepositing ? (
+                  <>
+                    <Loader2 className="size-4 mr-2 animate-spin" />
+                    Deposito in corso...
+                  </>
+                ) : (
+                  <>
+                    <ArrowDownToLine className="size-4 mr-2" />
+                    Deposita
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Last deposit tx */}
+            {depositTxHash && (
+              <div className="p-2 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-green-700">Ultimo deposito:</span>
+                  <a
+                    href={`${POLYGONSCAN_BASE}${depositTxHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-600 hover:underline flex items-center gap-1"
+                  >
+                    {depositTxHash.slice(0, 10)}...
+                    <ExternalLink className="size-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Help text */}
+            <p className="text-xs text-muted-foreground">
+              Brucia TEO dal tuo wallet MetaMask per accreditarli al saldo interno della piattaforma.
+              Il gas è a tuo carico.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Withdraw Card */}
+        <Card className="border-blue-200">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <div className="size-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <ArrowUpFromLine className="size-5 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Preleva TeoCoin</CardTitle>
+                <CardDescription>Addebito DB → Mint on-chain</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Balance display */}
+            <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Saldo DB disponibile:</span>
+                <span className="font-medium">{dbBalance.toFixed(4)} TEO</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Wallet destinazione:</span>
+                <span className="font-mono text-xs">
+                  {linkedWalletAddress ? formatWalletAddress(linkedWalletAddress) : "Non collegato"}
+                </span>
+              </div>
+            </div>
+
+            {/* No wallet warning */}
+            {!linkedWalletAddress && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                <AlertCircle className="size-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-800">
+                  Collega prima un wallet MetaMask per prelevare i tuoi TEO.
+                </div>
+              </div>
+            )}
+
+            {/* Withdraw form */}
+            <div className="space-y-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium">Importo da prelevare</label>
+                <Input
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  max={dbBalance}
+                  placeholder="es. 10.00"
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  disabled={isWithdrawing}
+                />
+              </div>
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={handleWithdraw}
+                disabled={isWithdrawing || !linkedWalletAddress || dbBalance <= 0}
+              >
+                {isWithdrawing ? (
+                  <>
+                    <Loader2 className="size-4 mr-2 animate-spin" />
+                    Prelievo in corso...
+                  </>
+                ) : (
+                  <>
+                    <ArrowUpFromLine className="size-4 mr-2" />
+                    Preleva
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Last withdraw tx */}
+            {withdrawTxHash && (
+              <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-blue-700">Ultimo prelievo:</span>
+                  <a
+                    href={`${POLYGONSCAN_BASE}${withdrawTxHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    {withdrawTxHash.slice(0, 10)}...
+                    <ExternalLink className="size-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Help text */}
+            <p className="text-xs text-muted-foreground">
+              Preleva TEO dal saldo interno e ricevili direttamente nel tuo wallet MetaMask.
+              Il gas è a carico della piattaforma.
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="activity" className="space-y-4">
