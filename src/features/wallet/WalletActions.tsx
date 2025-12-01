@@ -1,9 +1,9 @@
 /*** src/components/WalletActions.tsx ***/
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { onchainMint } from "./walletApi"
 import { useWeb3 } from "@/web3/context"
 import { burnTokens } from "onchain/ethersWeb3"
-import { verifyDeposit } from "@/services/wallet"
+import { verifyDeposit, getWallet } from "@/services/wallet"
 import { showToast } from "@/lib/api"
 import useTxStatus from "./hooks/useTxStatus"
 import TxStatusPanel from "./components/TxStatusPanel"
@@ -27,10 +27,31 @@ export default function WalletActions() {
   const [mintAmount, setMintAmount] = useState("")
   const [burnAmount, setBurnAmount] = useState("")
 
+  // Linked wallet address from backend (user's profile)
+  const [linkedWalletAddress, setLinkedWalletAddress] = useState<string | null>(null)
+
   const { start: startTxPolling } = useTxStatus()
 
   // Use Web3 context address (connected wallet) as authoritative
   const { address: connectedAddress, isConnected } = useWeb3();
+
+  // Fetch linked wallet address on mount
+  useEffect(() => {
+    let mounted = true
+    const fetchLinkedWallet = async () => {
+      try {
+        const res = await getWallet()
+        if (mounted && res.ok && res.data?.address) {
+          setLinkedWalletAddress(res.data.address)
+        }
+      } catch (e) {
+        console.debug("[WalletActions] Failed to fetch linked wallet", e)
+      }
+    }
+    fetchLinkedWallet()
+    return () => { mounted = false }
+  }, [])
+
   const ensureConnectedAddress = (): string | null => {
     if (!isConnected || !connectedAddress) {
       showToast({ variant: "error", message: "Wallet non collegato" })
@@ -83,6 +104,25 @@ export default function WalletActions() {
   const addr = ensureConnectedAddress()
   if (!addr) return
     if (!ensurePositiveAmount(burnAmount, "Burn amount")) return
+
+    // SECURITY CHECK: Verify connected wallet matches the linked wallet in backend
+    // This prevents users from burning from an unlinked wallet (which would waste gas
+    // since backend will reject the verification)
+    if (!linkedWalletAddress) {
+      showToast({ 
+        variant: "error", 
+        message: "Nessun wallet collegato al tuo account. Collega prima il wallet." 
+      })
+      return
+    }
+
+    if (addr.toLowerCase() !== linkedWalletAddress.toLowerCase()) {
+      showToast({ 
+        variant: "error", 
+        message: `Il wallet connesso (${addr.slice(0, 6)}...${addr.slice(-4)}) non corrisponde al wallet collegato al tuo account (${linkedWalletAddress.slice(0, 6)}...${linkedWalletAddress.slice(-4)}). Connetti il wallet corretto.` 
+      })
+      return
+    }
 
     setBurning(true)
     try {
