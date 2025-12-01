@@ -374,16 +374,26 @@ export async function refreshBalance(): Promise<Result<WalletInfo>> {
  * body: { transaction_hash: string, amount: string }
  */
 export async function submitBurnDeposit(tx_hash: string, amount: string): Promise<Result<{ success: boolean; new_balance?: number; transaction_id?: number; error?: string }>> {
-  if (!tx_hash || typeof tx_hash !== 'string') return { ok: false, status: 400, error: 'tx_hash required' };
-  if (!amount || Number(amount) <= 0) return { ok: false, status: 400, error: 'amount must be > 0' };
+  console.log("[wallet.ts] submitBurnDeposit called with tx_hash:", tx_hash, "amount:", amount);
+  if (!tx_hash || typeof tx_hash !== 'string') {
+    console.error("[wallet.ts] submitBurnDeposit: tx_hash validation failed");
+    return { ok: false, status: 400, error: 'tx_hash required' };
+  }
+  if (!amount || Number(amount) <= 0) {
+    console.error("[wallet.ts] submitBurnDeposit: amount validation failed");
+    return { ok: false, status: 400, error: 'amount must be > 0' };
+  }
   
   const payload = { transaction_hash: tx_hash, amount: String(amount) };
+  console.log("[wallet.ts] submitBurnDeposit: sending payload", payload);
   const endpoints = [
     "/api/v1/teocoin/burn-deposit/",
     "/v1/teocoin/burn-deposit/",
     "/api/teocoin/burn-deposit/",
   ];
-  return tryPost<{ success: boolean; new_balance?: number; transaction_id?: number; error?: string }>(endpoints, payload);
+  const result = await tryPost<{ success: boolean; new_balance?: number; transaction_id?: number; error?: string }>(endpoints, payload);
+  console.log("[wallet.ts] submitBurnDeposit: result", result);
+  return result;
 }
 
 /**

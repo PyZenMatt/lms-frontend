@@ -164,7 +164,9 @@ export function Wallet() {
     try {
       // Step 1: Burn tokens on-chain (user pays gas)
       toast.info("Conferma la transazione burn nel wallet...")
+      console.log("[Wallet] handleDeposit: calling burnTokens with amount:", depositAmount)
       const burnRes = await burnTokens(depositAmount)
+      console.log("[Wallet] handleDeposit: burnTokens result:", burnRes)
       
       if (!burnRes.ok) {
         if (burnRes.error === 'user_rejected') {
@@ -177,6 +179,7 @@ export function Wallet() {
       }
 
       const txHash = burnRes.hash
+      console.log("[Wallet] handleDeposit: burn successful, txHash:", txHash)
       setDepositTxHash(txHash)
       toast.success("Burn completato! Verifica in corso...", {
         description: `TX: ${txHash.slice(0, 10)}...`,
@@ -187,7 +190,9 @@ export function Wallet() {
       })
 
       // Step 2: Submit to backend for verification
+      console.log("[Wallet] handleDeposit: calling submitBurnDeposit with txHash:", txHash, "amount:", depositAmount)
       const verifyRes = await submitBurnDeposit(txHash, depositAmount)
+      console.log("[Wallet] handleDeposit: submitBurnDeposit result:", verifyRes)
       
       if (verifyRes.ok && verifyRes.data?.success) {
         toast.success("Deposito completato!", {
