@@ -33,15 +33,24 @@ export function Wallet() {
   const [isConnecting, setIsConnecting] = useState(false)
 
   const handleConnectWallet = async () => {
+    console.log("[Wallet] handleConnectWallet CLICKED")
     setIsConnecting(true)
-    const success = await connectWallet()
-    if (success) {
-      toast("Wallet connected successfully!", {
-        description: "You can now receive tokens directly to your MetaMask wallet"
-      })
-    } else {
-      toast("Failed to connect wallet", {
-        description: "Please make sure MetaMask is installed and try again"
+    try {
+      const success = await connectWallet()
+      console.log("[Wallet] connectWallet returned:", success)
+      if (success) {
+        toast("Wallet connected successfully!", {
+          description: "You can now receive tokens directly to your MetaMask wallet"
+        })
+      } else {
+        toast("Failed to connect wallet", {
+          description: "Please make sure MetaMask is installed and try again"
+        })
+      }
+    } catch (err) {
+      console.error("[Wallet] connectWallet threw:", err)
+      toast("Error connecting wallet", {
+        description: String(err)
       })
     }
     setIsConnecting(false)
