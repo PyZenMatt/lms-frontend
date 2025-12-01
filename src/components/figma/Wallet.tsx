@@ -667,7 +667,7 @@ export function Wallet() {
               </div>
               <div>
                 <CardTitle className="text-base">Deposita TeoCoin</CardTitle>
-                <CardDescription>Burn on-chain → Accredito DB</CardDescription>
+                <CardDescription>Trasferisci TEO dal wallet alla piattaforma</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -760,8 +760,8 @@ export function Wallet() {
 
             {/* Help text */}
             <p className="text-xs text-muted-foreground">
-              Brucia TEO dal tuo wallet MetaMask per accreditarli al saldo interno della piattaforma.
-              Il gas è a tuo carico.
+              Trasferisci TEO dal tuo wallet MetaMask al saldo della piattaforma.
+              La fee di rete è a tuo carico.
             </p>
           </CardContent>
         </Card>
@@ -775,7 +775,7 @@ export function Wallet() {
               </div>
               <div>
                 <CardTitle className="text-base">Preleva TeoCoin</CardTitle>
-                <CardDescription>Addebito DB → Mint on-chain</CardDescription>
+                <CardDescription>Trasferisci TEO dalla piattaforma al wallet</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -868,17 +868,17 @@ export function Wallet() {
 
       <Tabs defaultValue="activity" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="activity">Recent Activity</TabsTrigger>
-          <TabsTrigger value="requests">Requests</TabsTrigger>
+          <TabsTrigger value="activity">Attività</TabsTrigger>
+          <TabsTrigger value="requests">Prelievi</TabsTrigger>
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
-          <TabsTrigger value="rewards">Reward System</TabsTrigger>
+          <TabsTrigger value="rewards">Premi</TabsTrigger>
         </TabsList>
 
         <TabsContent value="activity" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Transactions (DB)</CardTitle>
-              <CardDescription>Local ledger transactions from the database</CardDescription>
+              <CardTitle>Attività Recenti</CardTitle>
+              <CardDescription>Storico delle transazioni sulla piattaforma</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
                 {loadingTransactions ? (
@@ -894,45 +894,83 @@ export function Wallet() {
                     ))}
                   </div>
                 ) : recentTransactions.length === 0 ? (
-                  <div className="p-4 text-sm text-muted-foreground">No transactions yet.</div>
+                  <div className="p-4 text-sm text-muted-foreground">Nessuna transazione.</div>
                 ) : (
                   // show only DB-backed transactions in this tab
                   dbTransactions.length === 0 ? (
-                    <div className="p-4 text-sm text-muted-foreground">No DB transactions found.</div>
+                    <div className="p-4 text-sm text-muted-foreground">Nessuna transazione trovata.</div>
                   ) : (
                     dbTransactions.map((tx) => {
+                      const txRec = tx as unknown as Record<string, unknown>
                       const dateLabel = tx.created_at ? new Date(tx.created_at).toLocaleString() : ''
                       const amountVal = Number(tx.amount_teo ?? tx.amount ?? tx.value)
 
                       const rawDesc = String(tx.description ?? tx.type ?? '')
                       const rawDescLower = rawDesc.toLowerCase()
-                      const amountDisplay = Number.isFinite(amountVal) ? String(Math.abs(amountVal)) : 'Importo sconosciuto'
+                      const rawType = String(txRec.transaction_type ?? txRec.type ?? '').toLowerCase()
+                      const amountDisplay = Number.isFinite(amountVal) ? Math.abs(amountVal).toFixed(2) : '?'
+                      
+                      // Determine transaction type and icon
                       let mainLabel = rawDesc
-                      if (rawDescLower.includes('burn requested')) {
-                        mainLabel = `Deposito ${amountDisplay}`
-                      } else if (rawDescLower.includes('mint requested')) {
-                        mainLabel = `Prelievo ${amountDisplay}`
+                      let iconBg = 'bg-gray-100'
+                      let iconColor = 'text-gray-600'
+                      let Icon = TrendingUp
+                      
+                      if (rawDescLower.includes('deposit') || rawDescLower.includes('burn') || rawType === 'deposit') {
+                        mainLabel = `Deposito`
+                        iconBg = 'bg-green-100'
+                        iconColor = 'text-green-600'
+                        Icon = ArrowDownToLine
+                      } else if (rawDescLower.includes('withdraw') || rawDescLower.includes('mint') || rawType === 'withdrawal') {
+                        mainLabel = `Prelievo`
+                        iconBg = 'bg-blue-100'
+                        iconColor = 'text-blue-600'
+                        Icon = ArrowUpFromLine
+                      } else if (rawDescLower.includes('purchase') || rawDescLower.includes('corso')) {
+                        mainLabel = `Acquisto corso`
+                        iconBg = 'bg-purple-100'
+                        iconColor = 'text-purple-600'
+                      } else if (rawDescLower.includes('reward') || rawDescLower.includes('earned')) {
+                        mainLabel = `Ricompensa`
+                        iconBg = 'bg-amber-100'
+                        iconColor = 'text-amber-600'
+                        Icon = Sparkles
                       }
+
+                      // Get blockchain tx hash if available
+                      const blockchainTxHash = String(txRec.blockchain_tx_hash ?? txRec.tx_hash ?? txRec.transaction_hash ?? '')
 
                       const amt = Number(amountVal)
                       const amountKnown = Number.isFinite(amt)
-                      const abs = amountKnown ? String(Math.abs(amt)) : 'Importo sconosciuto'
                       let cls = 'bg-gray-50 text-gray-800'
                       if (amountKnown) {
                         if (amt > 0) cls = 'bg-green-50 text-green-800'
                         else if (amt < 0) cls = 'bg-red-50 text-red-800'
                       }
-                      const label = amountKnown ? `${amt > 0 ? '' : '-'}${abs} TEO` : abs
+                      const label = amountKnown ? `${amt >= 0 ? '+' : ''}${amt.toFixed(2)} TEO` : amountDisplay
 
                       return (
-                        <div key={getTxKey(tx)} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div key={getTxKey(tx)} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
                           <div className="flex items-center gap-3">
-                            <div className="size-8 bg-green-100 rounded-full flex items-center justify-center">
-                              <TrendingUp className="size-4 text-green-600" />
+                            <div className={`size-8 ${iconBg} rounded-full flex items-center justify-center`}>
+                              <Icon className={`size-4 ${iconColor}`} />
                             </div>
                             <div>
                               <p className="text-sm font-medium">{mainLabel}</p>
-                              <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                                {blockchainTxHash && blockchainTxHash.startsWith('0x') && (
+                                  <a
+                                    href={`${POLYGONSCAN_BASE}${blockchainTxHash}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-600 hover:underline flex items-center gap-0.5"
+                                  >
+                                    {blockchainTxHash.slice(0, 8)}...
+                                    <ExternalLink className="size-3" />
+                                  </a>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -944,9 +982,9 @@ export function Wallet() {
         ))}
                 {/* Pagination */}
                 <div className="flex items-center justify-end gap-2 mt-3">
-                  <Button variant="ghost" size="sm" onClick={handleLoadPrevious} disabled={txPage <= 1 && !txPrevious}>Prev</Button>
-                  <div className="text-sm text-muted-foreground">Page {txPage}{txCount ? ` • ${txCount} total` : ''}</div>
-                  <Button variant="ghost" size="sm" onClick={handleNextPage} disabled={!txHasMore && !txNext}>Next</Button>
+                  <Button variant="ghost" size="sm" onClick={handleLoadPrevious} disabled={txPage <= 1 && !txPrevious}>Prec</Button>
+                  <div className="text-sm text-muted-foreground">Pagina {txPage}{txCount ? ` • ${txCount} totali` : ''}</div>
+                  <Button variant="ghost" size="sm" onClick={handleNextPage} disabled={!txHasMore && !txNext}>Succ</Button>
                 </div>
                 <div className="flex items-center justify-end gap-2 mt-2">
                   <Button variant="outline" size="sm" onClick={handleLoadMore} disabled={!txHasMore || loadingTransactions}>Carica precedenti</Button>
@@ -959,60 +997,98 @@ export function Wallet() {
         <TabsContent value="requests" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>On‑chain Requests</CardTitle>
-              <CardDescription>On‑chain mint/burn requests and blockchain transactions</CardDescription>
+              <CardTitle>Richieste Prelievo</CardTitle>
+              <CardDescription>Storico dei prelievi verso il tuo wallet</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {loadingTransactions ? (
-                <div className="p-4 text-sm text-muted-foreground">Loading requests…</div>
+                <div className="p-4 text-sm text-muted-foreground">Caricamento...</div>
               ) : (
                 onchainTransactions.length === 0 ? (
-                  <div className="p-4 text-sm text-muted-foreground">No on-chain requests found.</div>
+                  <div className="p-4 text-sm text-muted-foreground">Nessun prelievo effettuato.</div>
                 ) : (
                   onchainTransactions.map((tx) => {
+                    const txRec = tx as unknown as Record<string, unknown>
                     const dateLabel = tx.created_at ? new Date(tx.created_at).toLocaleString() : ''
                     const amountVal = Number(tx.amount_teo ?? tx.amount ?? tx.value)
                     const rawDesc = String(tx.description ?? tx.type ?? '')
                     const rawDescLower = rawDesc.toLowerCase()
-                    const amountDisplay = Number.isFinite(amountVal) ? String(Math.abs(amountVal)) : 'Importo sconosciuto'
+                    const rawType = String(txRec.transaction_type ?? txRec.type ?? '').toLowerCase()
+                    const amountDisplay = Number.isFinite(amountVal) ? Math.abs(amountVal).toFixed(2) : '?'
+                    
+                    // Determine transaction type
                     let mainLabel = rawDesc
-                    if (rawDescLower.includes('burn requested')) mainLabel = `Deposito ${amountDisplay}`
-                    else if (rawDescLower.includes('mint requested')) mainLabel = `Prelievo ${amountDisplay}`
+                    let iconBg = 'bg-gray-100'
+                    let iconColor = 'text-gray-600'
+                    let Icon = TrendingUp
+                    
+                    if (rawDescLower.includes('deposit') || rawDescLower.includes('burn') || rawType === 'deposit') {
+                      mainLabel = `Deposito`
+                      iconBg = 'bg-green-100'
+                      iconColor = 'text-green-600'
+                      Icon = ArrowDownToLine
+                    } else if (rawDescLower.includes('withdraw') || rawDescLower.includes('mint') || rawType === 'withdrawal') {
+                      mainLabel = `Prelievo`
+                      iconBg = 'bg-blue-100'
+                      iconColor = 'text-blue-600'
+                      Icon = ArrowUpFromLine
+                    }
+
+                    // Get blockchain tx hash
+                    const blockchainTxHash = String(txRec.blockchain_tx_hash ?? txRec.tx_hash ?? txRec.transaction_hash ?? '')
 
                     const amt = Number(amountVal)
                     const amountKnown = Number.isFinite(amt)
-                    const abs = amountKnown ? String(Math.abs(amt)) : 'Importo sconosciuto'
-                    let cls = 'bg-gray-50 text-gray-800'
-                    if (amountKnown) {
-                      if (amt > 0) cls = 'bg-green-50 text-green-800'
-                      else if (amt < 0) cls = 'bg-red-50 text-red-800'
-                    }
-                    const label = amountKnown ? `${amt > 0 ? '' : '-'}${abs} TEO` : abs
+                    const label = amountKnown ? `${Math.abs(amt).toFixed(2)} TEO` : amountDisplay
 
                     const rawStatus = String(extractStatus(tx as Record<string, unknown>) ?? '')
                     const s = rawStatus.toLowerCase()
-                    const statusLabel = s ? (s.charAt(0).toUpperCase() + s.slice(1)) : ''
+                    let statusLabel = ''
                     let statusCls = 'bg-gray-100 text-gray-800'
-                    if (['completed', 'succeeded', 'ok'].includes(s)) statusCls = 'bg-green-50 text-green-800'
-                    else if (['pending', 'processing', 'queued', 'waiting'].includes(s)) statusCls = 'bg-amber-50 text-amber-800'
-                    else if (['failed', 'error', 'rejected'].includes(s)) statusCls = 'bg-red-50 text-red-800'
+                    
+                    if (['completed', 'succeeded', 'ok', 'approved'].includes(s)) {
+                      statusLabel = 'Completato'
+                      statusCls = 'bg-green-50 text-green-800'
+                    } else if (['pending', 'processing', 'queued', 'waiting'].includes(s)) {
+                      statusLabel = 'In elaborazione'
+                      statusCls = 'bg-amber-50 text-amber-800'
+                    } else if (['failed', 'error', 'rejected'].includes(s)) {
+                      statusLabel = 'Fallito'
+                      statusCls = 'bg-red-50 text-red-800'
+                    } else if (s) {
+                      statusLabel = s.charAt(0).toUpperCase() + s.slice(1)
+                    }
 
                     return (
-                      <div key={getTxKey(tx)} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={getTxKey(tx)} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="size-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <TrendingUp className="size-4 text-green-600" />
+                          <div className={`size-8 ${iconBg} rounded-full flex items-center justify-center`}>
+                            <Icon className={`size-4 ${iconColor}`} />
                           </div>
                           <div>
                             <p className="text-sm font-medium">{mainLabel}</p>
-                            <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-muted-foreground">{dateLabel}</p>
+                              {blockchainTxHash && blockchainTxHash.startsWith('0x') && (
+                                <a
+                                  href={`${POLYGONSCAN_BASE}${blockchainTxHash}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-blue-600 hover:underline flex items-center gap-0.5"
+                                  title="Vedi su Polygonscan"
+                                >
+                                  TX: {blockchainTxHash.slice(0, 8)}...
+                                  <ExternalLink className="size-3" />
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className={cls}>{label}</Badge>
-                          {statusLabel ? (
-                            <Badge variant="outline" className={`${statusCls} text-xs px-2 py-0.5`}> {statusLabel} </Badge>
-                          ) : null}
+                          <Badge variant="secondary" className="bg-blue-50 text-blue-800">{label}</Badge>
+                          {statusLabel && (
+                            <Badge variant="outline" className={`${statusCls} text-xs px-2 py-0.5`}>{statusLabel}</Badge>
+                          )}
                         </div>
                       </div>
                     )
