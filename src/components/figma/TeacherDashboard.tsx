@@ -183,12 +183,14 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
       setLoadingStats(true)
       setStatsError(null)
       const res = await getTeacherDashboard(1, 10)
+      console.log('[TeacherDashboard] API response:', res)
       if (!mounted) return
       if (res.ok) {
         setStats(res.data.stats)
         // normalize courses shape if present
         try {
           const c = res.data.courses ?? []
+          console.log('[TeacherDashboard] Raw courses:', c)
           // map minimal fields expected by this component when necessary
           const mapped = Array.isArray(c)
             ? c.map((x: any) => ({
@@ -203,6 +205,7 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
                 createdAt: x.created_at ?? x.createdAt ?? '',
               }))
             : []
+          console.log('[TeacherDashboard] Mapped courses:', mapped)
           setCourses(mapped)
         } catch (e) {
           console.debug('Failed to map teacher courses', e)
