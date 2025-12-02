@@ -193,10 +193,10 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
                 title: x.title ?? x.name ?? "Untitled",
                 description: x.description ?? "",
                 level: (x.level as any) ?? 'beginner',
-                thumbnail: x.cover_url ?? x.cover_image ?? x.thumbnail ?? '',
-                students: typeof x.students_count === 'number' ? x.students_count : (x.students ?? 0),
-                lessons: typeof x.lessons_count === 'number' ? x.lessons_count : (x.lessons?.length ?? 0),
-                status: x.published || x.is_approved ? 'published' : 'draft',
+                thumbnail: x.cover_url ?? x.cover_image_url ?? x.cover_image ?? x.thumbnail ?? '',
+                students: typeof x.total_students === 'number' ? x.total_students : (typeof x.students_count === 'number' ? x.students_count : (x.students ?? 0)),
+                lessons: typeof x.lessons === 'object' && Array.isArray(x.lessons) ? x.lessons.length : (typeof x.lessons_count === 'number' ? x.lessons_count : 0),
+                status: x.status ?? (x.published || x.is_approved ? 'published' : 'draft'),
                 createdAt: x.created_at ?? x.createdAt ?? '',
               }))
             : []
