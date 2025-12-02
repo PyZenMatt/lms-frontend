@@ -24,7 +24,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "./AuthContext"
 import { getTeacherDashboard, type TeacherStats } from "../../services/teacher"
-import { createCourse as apiCreateCourse, createLesson as apiCreateLesson, type CourseInput, type LessonInput } from "../../services/studio"
+import { createCourse as apiCreateCourse, createLesson as apiCreateLesson, type CourseInput, type LessonInput, CATEGORY_OPTIONS } from "../../services/studio"
 import { ImageWithFallback } from "./figma/ImageWithFallback"
 
 interface Course {
@@ -71,7 +71,9 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
   const [newCourse, setNewCourse] = useState({
     title: '',
     description: '',
-    level: 'beginner' as 'beginner' | 'intermediate' | 'advanced'
+    level: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
+    category: 'other' as string,
+    price: 0 as number
   })
 
   const [newLesson, setNewLesson] = useState({
@@ -93,6 +95,8 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
       const input: CourseInput = {
         title: newCourse.title,
         description: newCourse.description,
+        category: newCourse.category,
+        price: newCourse.price,
         status: 'draft',
       }
       const res = await apiCreateCourse(input)
@@ -109,7 +113,7 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
           createdAt: new Date().toISOString().split('T')[0]
         }
         setCourses([...courses, course])
-        setNewCourse({ title: '', description: '', level: 'beginner' })
+        setNewCourse({ title: '', description: '', level: 'beginner', category: 'other', price: 0 })
         setIsCreateCourseOpen(false)
       } else {
         setCreateError(res.error?.message ?? res.error ?? 'Errore nella creazione del corso')
@@ -254,23 +258,55 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
                     className="min-h-20"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Difficulty Level</Label>
+                    <Select 
+                      value={newCourse.level} 
+                      onValueChange={(value: 'beginner' | 'intermediate' | 'advanced') => 
+                        setNewCourse({...newCourse, level: value})
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="beginner">Beginner</SelectItem>
+                        <SelectItem value="intermediate">Intermediate</SelectItem>
+                        <SelectItem value="advanced">Advanced</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select 
+                      value={newCourse.category} 
+                      onValueChange={(value: string) => 
+                        setNewCourse({...newCourse, category: value})
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORY_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label>Difficulty Level</Label>
-                  <Select 
-                    value={newCourse.level} 
-                    onValueChange={(value: 'beginner' | 'intermediate' | 'advanced') => 
-                      setNewCourse({...newCourse, level: value})
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="course-price">Prezzo (TEO)</Label>
+                  <Input
+                    id="course-price"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    value={newCourse.price}
+                    onChange={(e) => setNewCourse({...newCourse, price: Number(e.target.value) || 0})}
+                  />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                   {createError && (
