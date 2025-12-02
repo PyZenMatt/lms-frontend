@@ -207,7 +207,8 @@ export async function createCourse(input: CourseInput): Promise<Result<CourseAdm
   // backend Course model expects field `cover_image`
   fd.append("cover_image", input.cover_file, input.cover_file.name)
 
-    for (const p of [`/v1/teacher/courses/`, `/v1/courses/`, `/v1/courses-service/`]) {
+    // Try /v1/courses/ first since it supports POST (ListCreateAPIView)
+    for (const p of [`/v1/courses/`, `/v1/teacher/courses/`, `/v1/courses-service/`]) {
       const res = await api.post<any>(p, fd)
       if (res.ok) return { ok: true, status: res.status, data: normCourse(res.data) }
       if (![404, 405, 415, 422].includes((res as any).status ?? res.status)) {
@@ -225,7 +226,8 @@ export async function createCourse(input: CourseInput): Promise<Result<CourseAdm
     category: input.category ?? null,
     cover_url: input.cover_url,
   }
-  for (const p of [`/v1/teacher/courses/`, `/v1/courses/`, `/v1/courses-service/`]) {
+  // Try /v1/courses/ first since it supports POST (ListCreateAPIView)
+  for (const p of [`/v1/courses/`, `/v1/teacher/courses/`, `/v1/courses-service/`]) {
     const res = await api.post<any>(p, body)
     if (res.ok) return { ok: true, status: res.status, data: normCourse(res.data) }
     if (![404, 405].includes((res as any).status ?? res.status)) {
