@@ -79,6 +79,7 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
   const [newLesson, setNewLesson] = useState({
     title: '',
     description: '',
+    duration: 30 as number,
     exerciseTitle: '',
     exerciseDescription: '',
     exerciseInstructions: '',
@@ -137,6 +138,7 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
       const input: LessonInput = {
         title: newLesson.title,
         description: newLesson.description,
+        duration_min: newLesson.duration,
         lesson_type: 'theory',
       }
       const res = await apiCreateLesson(courseId, input)
@@ -150,6 +152,7 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
         setNewLesson({
           title: '',
           description: '',
+          duration: 30,
           exerciseTitle: '',
           exerciseDescription: '',
           exerciseInstructions: '',
@@ -537,12 +540,14 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="time-estimate">Time Estimate</Label>
+                              <Label htmlFor="lesson-duration">Durata (minuti)</Label>
                               <Input
-                                id="time-estimate"
-                                placeholder="e.g., 45 minutes"
-                                value={newLesson.timeEstimate}
-                                onChange={(e) => setNewLesson({...newLesson, timeEstimate: e.target.value})}
+                                id="lesson-duration"
+                                type="number"
+                                min="1"
+                                placeholder="30"
+                                value={newLesson.duration}
+                                onChange={(e) => setNewLesson({...newLesson, duration: Number(e.target.value) || 30})}
                               />
                             </div>
                           </div>
