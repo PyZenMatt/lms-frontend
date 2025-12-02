@@ -3,7 +3,7 @@ import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
 import { Progress } from "./ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { Sparkles, Users, BookOpen, Trophy, MessageCircle, Star, UserCheck, Clock, Eye } from "lucide-react"
+import { GraduationCap, Users, BookOpen, Trophy, MessageCircle, Star, UserCheck, Clock, Eye } from "lucide-react"
 import { ImageWithFallback } from "./figma/ImageWithFallback"
 
 interface DashboardProps {
@@ -21,7 +21,7 @@ export function Dashboard({ onContinueCourse, onNavigateToPage }: DashboardProps
   const activeCourses = stats?.activeCourses ?? 0;
   const pendingReviews = stats?.pendingReviews ?? 0;
   const reviewsGiven = stats?.reviewsGiven ?? 0;
-  const creatorTokensLabel = stats?.creatorTokensLabel ?? "—";
+  const incompleteCourses = stats?.incompleteCourses ?? 0;
 
   return (
     <div className="space-y-6">
@@ -31,9 +31,9 @@ export function Dashboard({ onContinueCourse, onNavigateToPage }: DashboardProps
           <h1>Welcome back, Maya!</h1>
           <p className="text-muted-foreground">Continue your artistic journey and connect with the community</p>
         </div>
-        <div className="flex items-center gap-2 bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2 rounded-lg border">
-          <Sparkles className="size-4 text-purple-600" />
-          <span className="font-medium">{loading ? '—' : creatorTokensLabel}</span>
+        <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-lg border">
+          <GraduationCap className="size-4 text-blue-600" />
+          <span className="font-medium">{loading ? '—' : `${incompleteCourses} Corsi da completare`}</span>
         </div>
       </div>
 

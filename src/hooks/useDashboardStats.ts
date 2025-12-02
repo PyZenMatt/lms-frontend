@@ -11,6 +11,7 @@ export type DashboardStats = {
   reviewsGiven: number;
   teoBalance: number;
   creatorTokensLabel: string; // friendly label
+  incompleteCourses: number; // courses purchased but not finished (progress < 100%)
   enrolledCourses?: Array<{
     id: string;
     title: string;
@@ -86,12 +87,14 @@ export default function useDashboardStats() {
         const reviewsGiven = 0
         const teoBalance = 0
         const creatorTokensLabel = `${Number.isFinite(teoBalance) ? Math.round(teoBalance) : 0} Creator Tokens`
-        setStats({ activeCourses, pendingReviews, reviewsGiven, teoBalance: teoBalance ?? 0, creatorTokensLabel, enrolledCourses: enriched })
+        // Count courses that are not yet completed (progress < 100%)
+        const incompleteCourses = enriched.filter(c => (c.progressPercent ?? 0) < 100).length
+        setStats({ activeCourses, pendingReviews, reviewsGiven, teoBalance: teoBalance ?? 0, creatorTokensLabel, incompleteCourses, enrolledCourses: enriched })
         setError(null)
       } catch (e: any) {
         if (!mounted) return
         setError(String(e?.message ?? e ?? 'Error'))
-        setStats({ activeCourses: 0, pendingReviews: 0, reviewsGiven: 0, teoBalance: 0, creatorTokensLabel: '0 Creator Tokens' })
+        setStats({ activeCourses: 0, pendingReviews: 0, reviewsGiven: 0, teoBalance: 0, creatorTokensLabel: '0 Creator Tokens', incompleteCourses: 0 })
       } finally {
         if (mounted) setEnriching(false)
       }
