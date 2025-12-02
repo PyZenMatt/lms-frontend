@@ -24,6 +24,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "./AuthContext"
 import { getTeacherDashboard, type TeacherStats } from "../../services/teacher"
+import { createCourse as apiCreateCourse, createLesson as apiCreateLesson, type CourseInput, type LessonInput } from "../../services/studio"
 import { ImageWithFallback } from "./figma/ImageWithFallback"
 
 interface Course {
@@ -82,22 +83,83 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
     timeEstimate: ''
   })
 
-  const handleCreateCourse = () => {
-    const course: Course = {
-      id: Date.now().toString(),
-      title: newCourse.title,
-      description: newCourse.description,
-      level: newCourse.level,
-      thumbnail: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=300&h=200&fit=crop&crop=center',
-      students: 0,
-      lessons: 0,
-      status: 'draft',
-      createdAt: new Date().toISOString().split('T')[0]
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
+
+  const handleCreateCourse = async () => {
+    setCreating(true)
+    setCreateError(null)
+    try {
+      const input: CourseInput = {
+        title: newCourse.title,
+        description: newCourse.description,
+        status: 'draft',
+      }
+      const res = await apiCreateCourse(input)
+      if (res.ok) {
+        const course: Course = {
+          id: String(res.data.id),
+          title: res.data.title,
+          description: res.data.description ?? '',
+          level: newCourse.level,
+          thumbnail: res.data.cover_url ?? '',
+          students: 0,
+          lessons: 0,
+          status: 'draft',
+          createdAt: new Date().toISOString().split('T')[0]
+        }
+        setCourses([...courses, course])
+        setNewCourse({ title: '', description: '', level: 'beginner' })
+        setIsCreateCourseOpen(false)
+      } else {
+        setCreateError(res.error?.message ?? res.error ?? 'Errore nella creazione del corso')
+      }
+    } catch (e: any) {
+      setCreateError(e?.message ?? 'Errore sconosciuto')
+    } finally {
+      setCreating(false)
     }
-    
-    setCourses([...courses, course])
-    setNewCourse({ title: '', description: '', level: 'beginner' })
-    setIsCreateCourseOpen(false)
+  }
+
+  const [creatingLesson, setCreatingLesson] = useState(false)
+  const [lessonError, setLessonError] = useState<string | null>(null)
+
+  const handleCreateLesson = async () => {
+    if (!selectedCourse) return
+    setCreatingLesson(true)
+    setLessonError(null)
+    try {
+      const courseId = Number(selectedCourse)
+      const input: LessonInput = {
+        title: newLesson.title,
+        description: newLesson.description,
+        lesson_type: 'theory',
+      }
+      const res = await apiCreateLesson(courseId, input)
+      if (res.ok) {
+        // Update local course lessons count
+        setCourses(courses.map(c => 
+          c.id === selectedCourse 
+            ? { ...c, lessons: c.lessons + 1 }
+            : c
+        ))
+        setNewLesson({
+          title: '',
+          description: '',
+          exerciseTitle: '',
+          exerciseDescription: '',
+          exerciseInstructions: '',
+          timeEstimate: ''
+        })
+        setIsCreateLessonOpen(false)
+      } else {
+        setLessonError(res.error?.message ?? res.error ?? 'Errore nella creazione della lezione')
+      }
+    } catch (e: any) {
+      setLessonError(e?.message ?? 'Errore sconosciuto')
+    } finally {
+      setCreatingLesson(false)
+    }
   }
 
   const publishedCourses = courses.filter(c => c.status === 'published')
@@ -211,11 +273,14 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
                   </Select>
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button variant="outline" onClick={() => setIsCreateCourseOpen(false)}>
+                  {createError && (
+                    <p className="text-sm text-red-600 mr-auto">{createError}</p>
+                  )}
+                  <Button variant="outline" onClick={() => setIsCreateCourseOpen(false)} disabled={creating}>
                     Cancel
                   </Button>
-                  <Button onClick={handleCreateCourse} disabled={!newCourse.title}>
-                    Create Course
+                  <Button onClick={handleCreateCourse} disabled={!newCourse.title || creating}>
+                    {creating ? 'Creazione...' : 'Create Course'}
                   </Button>
                 </div>
               </div>
@@ -488,11 +553,14 @@ export function TeacherDashboard({ onViewCourse }: TeacherDashboardProps) {
                             </div>
                           </div>
                           <div className="flex justify-end gap-3 pt-4">
-                            <Button variant="outline" onClick={() => setIsCreateLessonOpen(false)}>
+                            {lessonError && (
+                              <p className="text-sm text-red-600 mr-auto">{lessonError}</p>
+                            )}
+                            <Button variant="outline" onClick={() => setIsCreateLessonOpen(false)} disabled={creatingLesson}>
                               Cancel
                             </Button>
-                            <Button disabled={!newLesson.title || !newLesson.exerciseTitle}>
-                              Create Lesson
+                            <Button onClick={handleCreateLesson} disabled={!newLesson.title || creatingLesson}>
+                              {creatingLesson ? 'Creazione...' : 'Create Lesson'}
                             </Button>
                           </div>
                         </div>
