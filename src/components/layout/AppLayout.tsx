@@ -23,6 +23,7 @@ import ThemeToggleIcon from "@/components/ThemeToggleIcon";
 import { getDashboardHome } from "@/lib/dashboard";
 
 export default function AppLayout({ children }: { children?: React.ReactNode }) {
+  const { user, logout } = useAuth();
   // derive location early so collapsed can be correct on first render
   const location = useLocation();
   const path = location?.pathname ?? "";
@@ -48,13 +49,13 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
 
     return () => {};
   }, [mobileOpen]);
-  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   // derive the sidebar "page" token from the current pathname
   const currentPage = React.useMemo(() => {
     const p = (path || "").toLowerCase();
     if (p === "/" || p === "/dashboard") return "dashboard";
+    if (p === "/admin") return "dashboard";
     if (p.startsWith("/courses")) return "courses";
     if (p.startsWith("/peer-review")) return "peer-review";
     if (p.startsWith("/community")) return "community";
@@ -109,16 +110,8 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                 switch (p) {
                   // app index and most dashboards point to courses listing by default
                   case "dashboard":
-                    // If the user has a role-aware dashboard mapping available in localStorage
-                    try {
-                      // prefer artlearn_user role when available, else fallback to default
-                      const s = localStorage.getItem('artlearn_user');
-                      if (s) {
-                        const u = JSON.parse(s) as { role?: string } | null;
-                        if (u?.role) return getDashboardHome(u.role);
-                      }
-                    } catch { /* ignore and fallback */ }
-                    return "/dashboard";
+                    // Use the current user role from Auth context
+                    return getDashboardHome(user?.role);
                   case "courses":
                     return "/courses";
                   // peer-review in the app is routed to assigned reviews

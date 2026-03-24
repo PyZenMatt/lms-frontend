@@ -62,7 +62,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
   if (typeof tokenRole === 'string' && tokenRole.toLowerCase() === 'admin') {
     const idx = menuItems.findIndex((i) => i.title === 'Learning Paths')
     if (idx !== -1) {
-      // mutate a copy to avoid changing constants
+      // Replace Learning Paths with Approve courses
       menuItems[idx] = { title: 'Approve courses', page: 'approve-courses', icon: BookOpen }
     }
     // Add Analytics item for admin

@@ -51,7 +51,6 @@ export default function AdminDashboard() {
         page_size: pageSize,
         q: appliedSearch || undefined,
       });
-      // api.get returns { ok, status, data, error } - data should contain { items, count }
       const payload = res?.data as any;
       const safeItems: PendingTeacher[] = Array.isArray(payload?.items) ? payload.items : [];
       setItems(safeItems);
@@ -63,8 +62,7 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   }
-  // load is stable in this component; intentionally exclude it from deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   React.useEffect(() => { load(); }, [page, pageSize, appliedSearch]);
 
   function applySearch() {
@@ -73,11 +71,9 @@ export default function AdminDashboard() {
   }
 
   async function onApprove(id: number | string) {
-  setBusy((b) => ({ ...b, [id]: "approve" as const }));
+    setBusy((b) => ({ ...b, [id]: "approve" as const }));
     try {
-      // approveTeacher is a wrapper for approveCourse and expects a number; coerce if needed
       await approveTeacher(Number(id));
-      // ricarica la pagina corrente (se svuotata e non prima, scala pagina)
       const after = Math.max(1, Math.min(page, Math.ceil((count - 1) / pageSize) || 1));
       if (after !== page) setPage(after);
       else await load();
@@ -90,7 +86,7 @@ export default function AdminDashboard() {
   }
 
   async function onReject(id: number | string) {
-  setBusy((b) => ({ ...b, [id]: "reject" as const }));
+    setBusy((b) => ({ ...b, [id]: "reject" as const }));
     try {
       await rejectTeacher(id);
       const after = Math.max(1, Math.min(page, Math.ceil((count - 1) / pageSize) || 1));
@@ -161,11 +157,11 @@ export default function AdminDashboard() {
           </span>
         </div>
 
-  {error && <Alert variant="error">{error}</Alert>}
+        {error && <Alert variant="error">{error}</Alert>}
 
-  {loading ? (
+        {loading ? (
           <div className="p-4 text-sm text-muted-foreground"><Spinner /> Caricamento…</div>
-  ) : (items || []).length === 0 ? (
+        ) : (items || []).length === 0 ? (
           <EmptyState title="Nessun docente in attesa" description={appliedSearch ? `Nessun docente in attesa per "${appliedSearch}"` : "Nessun docente in attesa."} />
         ) : (
           <>
@@ -224,7 +220,6 @@ export default function AdminDashboard() {
               </table>
             </div>
 
-            {/* Pager */}
             <div className="flex items-center justify-between border-t border-border p-4 text-sm">
               <div className="text-muted-foreground">
                 Pagina <span className="font-medium">{page}</span> di <span className="font-medium">{totalPages}</span>
