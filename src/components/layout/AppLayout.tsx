@@ -56,17 +56,19 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
     const p = (path || "").toLowerCase();
     if (p === "/" || p === "/dashboard") return "dashboard";
     if (p.startsWith("/courses")) return "courses";
-  if (p.startsWith("/peer-review")) return "peer-review";
+    if (p.startsWith("/peer-review")) return "peer-review";
     if (p.startsWith("/community")) return "community";
     if (p.startsWith("/gallery")) return "gallery";
     if (p.startsWith("/discussions")) return "discussions";
     if (p.startsWith("/achievements")) return "achievements";
     if (p.startsWith("/teacher") || p.startsWith("/teacher-dashboard")) return "teacher-dashboard";
     if (p.startsWith("/students")) return "students";
+    if (p.startsWith("/admin/analytics")) return "admin-analytics";
+    if (p.startsWith("/admin")) return "approve-courses";
     if (p.startsWith("/analytics")) return "analytics";
     if (p.startsWith("/wallet")) return "wallet";
-  if (p.startsWith("/notifications")) return "notifications";
-  if (p.startsWith("/teacher/pending-discounts")) return "teacher-opportunities";
+    if (p.startsWith("/notifications")) return "notifications";
+    if (p.startsWith("/teacher/pending-discounts")) return "teacher-opportunities";
     return "dashboard";
   }, [path]);
 
@@ -145,6 +147,8 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                     return "/teacher/pending-discounts";
                   case "approve-courses":
                     return "/admin/approve-courses";
+                  case "admin-analytics":
+                    return "/admin/analytics";
                   case "profile":
                     return "/profile";
                   default:

@@ -166,7 +166,7 @@ export default function AdminDashboard() {
   {loading ? (
           <div className="p-4 text-sm text-muted-foreground"><Spinner /> Caricamento…</div>
   ) : (items || []).length === 0 ? (
-          <EmptyState title="Nessun docente in attesa" description={appliedSearch ? `Nessun docente in attesa per “${appliedSearch}”` : "Nessun docente in attesa."} />
+          <EmptyState title="Nessun docente in attesa" description={appliedSearch ? `Nessun docente in attesa per "${appliedSearch}"` : "Nessun docente in attesa."} />
         ) : (
           <>
             <div className="overflow-x-auto">

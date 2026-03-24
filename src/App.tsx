@@ -36,6 +36,7 @@ import DashboardRedirect from "./pages/DashboardRedirect";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import StakingPage from "./pages/teacher/Staking";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminAnalytics from "./pages/AdminAnalytics";
 import ApproveCourses from "./pages/admin/ApproveCourses";
 import CoursesStudioList from "./pages/studio/CoursesStudioList"
 import CourseStudioForm from "./pages/studio/CourseStudioForm"
@@ -240,6 +241,15 @@ export default function App() {
             element={
               <RoleRoute allow="admin">
                 <ErrorBoundary><AdminDashboard /></ErrorBoundary>
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="/admin/analytics"
+            element={
+              <RoleRoute allow="admin">
+                <ErrorBoundary><AdminAnalytics /></ErrorBoundary>
               </RoleRoute>
             }
           />

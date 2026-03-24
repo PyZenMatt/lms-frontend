@@ -56,7 +56,7 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
 
   const menuItems = isTeacherRole ? teacherMenuItems : studentMenuItems
 
-  // If user is admin, replace Learning Paths with Approve courses
+  // If user is admin, replace Learning Paths with Approve courses and add Analytics
   // runtime-safe admin check without 'any'
   const tokenRole = (user as Record<string, unknown> | undefined)?.role
   if (typeof tokenRole === 'string' && tokenRole.toLowerCase() === 'admin') {
@@ -65,6 +65,8 @@ export function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
       // mutate a copy to avoid changing constants
       menuItems[idx] = { title: 'Approve courses', page: 'approve-courses', icon: BookOpen }
     }
+    // Add Analytics item for admin
+    menuItems.push({ title: 'Analytics', page: 'admin-analytics', icon: Trophy })
   }
 
   function UnreadBadge() {
