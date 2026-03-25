@@ -65,7 +65,7 @@ export function getMenuByRole(role: Role, isAuthenticated: boolean): MenuSection
 
   // admin section
   if (role === "admin") {
-  sections.push({ items: [{ to: "/admin", label: "Admin", icon: <Settings size={20} strokeWidth={1.75} />, match: "prefix" }] });
+  sections.push({ items: [{ to: "/dashboard/admin", label: "Admin", icon: <Settings size={20} strokeWidth={1.75} />, match: "prefix" }] });
   }
 
   // final utilities

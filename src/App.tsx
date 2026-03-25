@@ -237,7 +237,7 @@ export default function App() {
 
           {/* ADMIN only */}
           <Route
-            path="/admin"
+            path="/dashboard/admin"
             element={
               <RoleRoute allow="admin">
                 <ErrorBoundary><AdminDashboard /></ErrorBoundary>
@@ -246,7 +246,7 @@ export default function App() {
           />
 
           <Route
-            path="/admin/analytics"
+            path="/dashboard/admin/analytics"
             element={
               <RoleRoute allow="admin">
                 <ErrorBoundary><AdminAnalytics /></ErrorBoundary>
@@ -255,7 +255,7 @@ export default function App() {
           />
 
           <Route
-            path="/admin/approve-courses"
+            path="/dashboard/admin/approve-courses"
             element={
               <RoleRoute allow="admin">
                 <ErrorBoundary><ApproveCourses /></ErrorBoundary>

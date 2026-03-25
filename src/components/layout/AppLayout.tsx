@@ -55,7 +55,7 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
   const currentPage = React.useMemo(() => {
     const p = (path || "").toLowerCase();
     if (p === "/" || p === "/dashboard") return "dashboard";
-    if (p === "/admin") return "dashboard";
+    if (p === "/dashboard/admin") return "dashboard";
     if (p.startsWith("/courses")) return "courses";
     if (p.startsWith("/peer-review")) return "peer-review";
     if (p.startsWith("/community")) return "community";
@@ -64,8 +64,8 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
     if (p.startsWith("/achievements")) return "achievements";
     if (p.startsWith("/teacher") || p.startsWith("/teacher-dashboard")) return "teacher-dashboard";
     if (p.startsWith("/students")) return "students";
-    if (p.startsWith("/admin/analytics")) return "admin-analytics";
-    if (p.startsWith("/admin")) return "approve-courses";
+    if (p.startsWith("/dashboard/admin/analytics")) return "admin-analytics";
+    if (p.startsWith("/dashboard/admin")) return "approve-courses";
     if (p.startsWith("/analytics")) return "analytics";
     if (p.startsWith("/wallet")) return "wallet";
     if (p.startsWith("/notifications")) return "notifications";
@@ -139,9 +139,9 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                   case "teacher-opportunities":
                     return "/teacher/pending-discounts";
                   case "approve-courses":
-                    return "/admin/approve-courses";
+                    return "/dashboard/admin/approve-courses";
                   case "admin-analytics":
-                    return "/admin/analytics";
+                    return "/dashboard/admin/analytics";
                   case "profile":
                     return "/profile";
                   default:

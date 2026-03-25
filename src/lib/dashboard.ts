@@ -2,7 +2,7 @@
 export type RoleLike = 'student' | 'teacher' | 'admin' | null | undefined | string;
 
 export const DASHBOARD_HOME: Record<string, string> = {
-  admin: '/admin',
+  admin: '/dashboard/admin',
   teacher: '/teacher',
   student: '/dashboard/student',
 };
