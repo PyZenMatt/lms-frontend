@@ -6,6 +6,8 @@ import { useAuth } from "./context/AuthContext";
 import TopProgressBar from "./components/TopProgressBar";
 import ToastHost from "./components/ToastHost";
 import ErrorBoundary from "./components/ErrorBoundary";
+import PublicLayout from "./components/layout/PublicLayout";
+import LandingPage from "./pages/LandingPage";
 import CourseDetail from "./pages/CourseDetail"
 import CourseCheckout from "./pages/CourseCheckout"
 import PaymentReturn from "./pages/PaymentReturn"
@@ -60,33 +62,46 @@ export default function App() {
       <ToastHost />
 
       <Routes>
+        {/* Public landing page at root */}
+        <Route
+          path="/"
+          element={
+            <PublicLayout
+              footer={<div className="text-xs text-muted-foreground">v1.0 • beta</div>}
+            >
+              <LandingPage />
+            </PublicLayout>
+          }
+        />
+
         {/* Auth routes - render without AppLayout (no navbar/spacer) */}
   <Route path="/login" element={<ErrorBoundary><AuthForms defaultTab="login" /></ErrorBoundary>} />
   <Route path="/register" element={<ErrorBoundary><AuthForms defaultTab="signup" /></ErrorBoundary>} />
         <Route path="/verify-email" element={<ErrorBoundary><VerifyEmail /></ErrorBoundary>} />
         <Route path="/verify-email/sent" element={<ErrorBoundary><VerifyEmailSent /></ErrorBoundary>} />
 
-        <Route element={<AppLayoutRoute />}>
+        {/* Demo app routes */}
+        <Route path="/demo" element={<AppLayoutRoute />}>
           {/* Public */}
           <Route
             index
             element={
               !authChecked || booting ? (
-                  <div className="p-6 text-sm text-muted-foreground">Verifica sessione</div>
+                  <div className="p-6 text-sm text-muted-foreground">Verifica sessione</div>
                 ) : isAuthenticated ? (
-                  <Navigate to="/courses" replace />
+                  <Navigate to="/demo/courses" replace />
                 ) : (
                   <Navigate to="/login" replace />
                 )
             }
           />
-          <Route path="/forbidden" element={<ErrorBoundary><Forbidden /></ErrorBoundary>} />
-          <Route path="/courses" element={<ErrorBoundary><CoursesList /></ErrorBoundary>} />
-          <Route path="/_smoke/dropdown" element={<ErrorBoundary><DropdownSmoke /></ErrorBoundary>} />
-          <Route path="/courses/:id" element={<ErrorBoundary><CourseDetail /></ErrorBoundary>} />
+          <Route path="forbidden" element={<ErrorBoundary><Forbidden /></ErrorBoundary>} />
+          <Route path="courses" element={<ErrorBoundary><CoursesList /></ErrorBoundary>} />
+          <Route path="_smoke/dropdown" element={<ErrorBoundary><DropdownSmoke /></ErrorBoundary>} />
+          <Route path="courses/:id" element={<ErrorBoundary><CourseDetail /></ErrorBoundary>} />
 
           <Route
-            path="/learn/:id"
+            path="learn/:id"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><StudentCourse /></ErrorBoundary>
@@ -95,7 +110,7 @@ export default function App() {
           />
 
           <Route
-            path="/my/exercises"
+            path="my/exercises"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><MyExercises /></ErrorBoundary>
@@ -104,7 +119,7 @@ export default function App() {
           />
 
           <Route
-            path="/exercises/:id/submit"
+            path="exercises/:id/submit"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><ExerciseSubmit /></ErrorBoundary>
@@ -113,7 +128,7 @@ export default function App() {
           />
 
           <Route
-            path="/lessons/:id"
+            path="lessons/:id"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><LessonPage /></ErrorBoundary>
@@ -122,19 +137,19 @@ export default function App() {
           />
 
           <Route
-            path="/courses/:id/checkout"
+            path="courses/:id/checkout"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><CourseCheckout /></ErrorBoundary>
               </ProtectedRoute>
             }
           />
-          <Route path="/courses/:id/buy" element={<BuyRedirect />} />
-          <Route path="/payments/return" element={<ErrorBoundary><PaymentReturn /></ErrorBoundary>} />
+          <Route path="courses/:id/buy" element={<BuyRedirect />} />
+          <Route path="payments/return" element={<ErrorBoundary><PaymentReturn /></ErrorBoundary>} />
 
           {/* Protected (any role) */}
           <Route
-            path="/notifications"
+            path="notifications"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><Notifications /></ErrorBoundary>
@@ -142,7 +157,7 @@ export default function App() {
             }
           />
           <Route
-            path="/reviews/assigned"
+            path="reviews/assigned"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><ReviewsAssigned /></ErrorBoundary>
@@ -150,7 +165,7 @@ export default function App() {
             }
           />
           <Route
-            path="/reviews/:id/review"
+            path="reviews/:id/review"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><ReviewSubmission /></ErrorBoundary>
@@ -158,16 +173,16 @@ export default function App() {
             }
           />
           <Route
-            path="/reviews/history"
+            path="reviews/history"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><ReviewsHistory /></ErrorBoundary>
               </ProtectedRoute>
             }
           />
-          <Route path="/dashboard" element={<DashboardRedirect />} />
+          <Route path="dashboard" element={<DashboardRedirect />} />
           <Route
-            path="/profile"
+            path="profile"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><ProfilePage /></ErrorBoundary>
@@ -175,7 +190,7 @@ export default function App() {
             }
           />
            <Route
-             path="/dashboard/student"
+             path="dashboard/student"
              element={
                <ProtectedRoute>
                  <ErrorBoundary><StudentDashboard /></ErrorBoundary>
@@ -185,7 +200,7 @@ export default function App() {
 
           {/* Peer Review pages */}
           <Route
-            path="/peer-review"
+            path="peer-review"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><PeerReview /></ErrorBoundary>
@@ -193,7 +208,7 @@ export default function App() {
             }
           />
           <Route
-            path="/courses/:id/peer-review"
+            path="courses/:id/peer-review"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><PeerReview /></ErrorBoundary>
@@ -203,7 +218,7 @@ export default function App() {
 
           {/* Community / Gallery / Discussions / Achievements */}
           <Route
-            path="/community"
+            path="community"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><Community /></ErrorBoundary>
@@ -211,7 +226,7 @@ export default function App() {
             }
           />
           <Route
-            path="/gallery"
+            path="gallery"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><Gallery /></ErrorBoundary>
@@ -219,7 +234,7 @@ export default function App() {
             }
           />
           <Route
-            path="/discussions"
+            path="discussions"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><Discussions /></ErrorBoundary>
@@ -227,7 +242,7 @@ export default function App() {
             }
           />
           <Route
-            path="/achievements"
+            path="achievements"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><Achievements /></ErrorBoundary>
@@ -237,7 +252,7 @@ export default function App() {
 
           {/* ADMIN only */}
           <Route
-            path="/dashboard/admin"
+            path="dashboard/admin"
             element={
               <RoleRoute allow="admin">
                 <ErrorBoundary><AdminDashboard /></ErrorBoundary>
@@ -246,7 +261,7 @@ export default function App() {
           />
 
           <Route
-            path="/dashboard/admin/analytics"
+            path="dashboard/admin/analytics"
             element={
               <RoleRoute allow="admin">
                 <ErrorBoundary><AdminAnalytics /></ErrorBoundary>
@@ -255,7 +270,7 @@ export default function App() {
           />
 
           <Route
-            path="/dashboard/admin/approve-courses"
+            path="dashboard/admin/approve-courses"
             element={
               <RoleRoute allow="admin">
                 <ErrorBoundary><ApproveCourses /></ErrorBoundary>
@@ -265,7 +280,7 @@ export default function App() {
 
           {/* TEACHER only */}
           <Route
-            path="/teacher"
+            path="teacher"
             element={
               <RoleRoute allow="teacher">
                 <ErrorBoundary><TeacherDashboard /></ErrorBoundary>
@@ -273,7 +288,7 @@ export default function App() {
             }
           />
           <Route
-            path="/teacher/staking"
+            path="teacher/staking"
             element={
               <RoleRoute allow="teacher">
                 <ErrorBoundary><StakingPage /></ErrorBoundary>
@@ -282,7 +297,7 @@ export default function App() {
           />
 
           <Route
-            path="/teacher/pending-discounts"
+            path="teacher/pending-discounts"
             element={
               <RoleRoute allow="teacher">
                 <ErrorBoundary><PendingDiscountsPage /></ErrorBoundary>
@@ -300,7 +315,7 @@ export default function App() {
 
           {/* Wallet */}
           <Route
-            path="/wallet"
+            path="wallet"
             element={
               <ProtectedRoute>
                 <ErrorBoundary><WalletPage /></ErrorBoundary>
@@ -322,5 +337,5 @@ export default function App() {
 function ConditionalFallback() {
   const { authChecked, isAuthenticated, booting } = useAuth();
   if (!authChecked || booting) return <div className="p-6 text-sm text-muted-foreground">Verifica sessione</div>;
-  return isAuthenticated ? <Navigate to="/courses" replace /> : <Navigate to="/login" replace />;
+  return isAuthenticated ? <Navigate to="/demo/courses" replace /> : <Navigate to="/login" replace />;
 }

@@ -3,6 +3,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
+import { LanguageProvider } from "./context/LanguageContext";
 import { Web3Provider } from "./context/Web3Context";
 import AppQueryProvider from "./lib/queryClient";
 import { BrowserRouter } from "react-router-dom";
@@ -14,9 +15,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <AppQueryProvider>
         <AuthProvider>
-          <Web3Provider>
-            <App />
-          </Web3Provider>
+          <LanguageProvider>
+            <Web3Provider>
+              <App />
+            </Web3Provider>
+          </LanguageProvider>
         </AuthProvider>
       </AppQueryProvider>
     </BrowserRouter>
